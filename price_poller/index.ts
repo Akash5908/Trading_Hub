@@ -1,0 +1,32 @@
+import express from "express";
+import { server } from "typescript";
+import { WebSocket, WebSocketServer } from "ws";
+import { pushToRedis } from "./redis.js";
+import { createClient } from "redis";
+
+const redis = createClient();
+const app = express();
+const wss = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
+
+console.log(wss);
+
+async function startRedisServer() {
+  try {
+    await redis.connect();
+    console.log("Successfully connected to redis!!");
+  } catch (error) {
+    console.error(error);
+  }
+}
+// Checking if the websocket binance connection is completed.
+wss.on("open", (ws) => {
+  console.log("hello");
+});
+
+// This is when a message came from websocket connection.
+wss.on("message", (data) => {
+  const trades = JSON.parse(data);
+  pushToRedis(redis, trades);
+});
+
+startRedisServer();
