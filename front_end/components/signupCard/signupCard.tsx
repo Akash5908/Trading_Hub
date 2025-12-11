@@ -7,8 +7,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "@/lib/validator";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useAppSelector, useAppDispatch } from "@/lib/hook";
+import { setCredentials } from "@/slices/userSlice";
+import { useRouter } from "next/navigation";
 
 const SignupCard = () => {
+  const user = useAppSelector((state) => state.user);
+
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -26,8 +34,13 @@ const SignupCard = () => {
           password: data.password,
         }
       );
+
+      const userData = res.data.profile;
+
       if (res.status === 200) {
         toast.success("Successfully signed up!");
+        dispatch(setCredentials(userData));
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error(error);
@@ -37,25 +50,39 @@ const SignupCard = () => {
   return (
     <div className="h-screen w-screen flex justify-center items-center">
       <div className="flex flex-col justify-center items-center h-50 w-80 border border-black rounded-sm">
+        <h1 className="text-white  text-4xl customize_text">Create Account</h1>
+        <h6 className="text-white text">Join Tradin hub today</h6>
+
+        {/* Using react-hook-form for validation */}
         <form
-          className=" space-y-2 justify-between w-70"
+          className=" space-y-5 justify-between w-100 h-90"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <Input type="text" placeholder="Username" {...register("username")} />
+          <Input
+            type="text"
+            placeholder="Username"
+            {...register("username")}
+            className="p-5"
+          />
           {errors.username && (
             <span className="text-red-500 text-[10px] ">
               {errors.username.message}
             </span>
           )}
-          <Input type="text" placeholder="Password" {...register("password")} />
+          <Input
+            type="text"
+            placeholder="Password"
+            {...register("password")}
+            className="p-5 "
+          />
           {errors.password && (
             <span className="text-red-500 text-[10px] ">
               {errors.password.message}
             </span>
           )}
 
-          <Button className="w-full" type="submit">
-            Submit
+          <Button className="w-full bg-white text-black" type="submit">
+            Signup
           </Button>
         </form>
       </div>

@@ -19,12 +19,12 @@ async function startRedisServer() {
   }
 }
 // Checking if the websocket binance connection is completed.
-wss.on("open", (ws) => {
+wss.on("open", (ws: WebSocket) => {
   console.log("hello");
 });
 
 // This is when a message came from websocket connection.
-wss.on("message", (data) => {
+wss.on("message", (data: string) => {
   const trades = JSON.parse(data);
   pushToRedis(redis, trades);
 });

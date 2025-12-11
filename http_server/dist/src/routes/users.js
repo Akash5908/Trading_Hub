@@ -10,14 +10,19 @@ router.post("/sign-up", async (req, res) => {
     const hashedPassword = hashPassword(password);
     var token = jwt.sign({ password: password }, privateKey);
     try {
-        await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 username: username,
                 password: hashedPassword,
                 token: token,
             },
         });
-        res.send({ message: "Signup successfully!!", token: token, status: 201 });
+        res.send({
+            message: "Signup successfully!!",
+            token: token,
+            status: 201,
+            profile: user,
+        });
     }
     catch (error) {
         console.error(error);
@@ -32,17 +37,21 @@ router.post("/sign-in", async (req, res) => {
                 username: username,
             },
         });
-        console.log(user);
-        if (bcrypt.compareSync(password, user?.password)) {
+        if (user === null) {
+            return res.send({ status: 404, message: "User not found!!" });
+        }
+        else if (bcrypt.compareSync(password, user?.password)) {
             res.send({
                 message: "Signin successfully!!",
                 status: 201,
                 token: user?.token,
+                profile: user,
             });
         }
     }
     catch (error) {
         console.error(error);
+        res.send(error);
     }
 });
 export default router;
