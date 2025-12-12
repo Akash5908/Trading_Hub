@@ -11,6 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setCredentials } from "@/slices/userSlice";
 import { useAppSelector, useAppDispatch } from "@/lib/hook";
 import { useRouter } from "next/navigation";
+import { setAuthToken } from "@/lib/auth";
 
 const LoginCard = () => {
   const user = useAppSelector((state) => state.user);
@@ -37,9 +38,12 @@ const LoginCard = () => {
       );
       const userData = res.data.profile;
       console.log(res);
+      const currentDate = new Date();
+      const expires = new Date(Number(currentDate) + 24 * 60 * 60 * 1000);
+      console.log(expires);
       if (res.data.status === 201) {
         toast.success("Successfully signed it.");
-        dispatch(setCredentials(userData));
+        setAuthToken(res.data.token);
         router.push("/dashboard");
       } else {
         toast.error(res.data.message);
@@ -69,7 +73,7 @@ const LoginCard = () => {
             type="text"
             placeholder="Username"
             {...register("username")}
-            className="p-5 text-4xl"
+            className="p-5 text-4xl bg-white"
           />
           {errors.username && (
             <span className="text-red-500 text-[10px] ">
@@ -93,7 +97,7 @@ const LoginCard = () => {
           </Button>
         </form>
         <span className="text-slate-500 font-light tracking-widest ">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <a className="text-white" href="/signup">
             Sign Up
           </a>

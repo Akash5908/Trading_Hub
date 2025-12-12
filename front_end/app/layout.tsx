@@ -30,11 +30,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
-        <div className=" absolute right-5  my-4">
-          <Navbar />
-        </div>
-        <ReduxProvider>{children}</ReduxProvider>
-        <Toaster />
+        <ReduxProvider>
+          <div className=" absolute right-5  my-4">
+            <Navbar />
+          </div>
+          {children}
+          <Toaster />
+        </ReduxProvider>
       </body>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />

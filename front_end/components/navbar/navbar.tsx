@@ -1,10 +1,16 @@
 "use client";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
+import { fetchProfile } from "@/lib/auth";
+import { useAppDispatch, useAppSelector } from "@/lib/hook";
+import { setCredentials } from "@/slices/userSlice";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 export function Navbar() {
+  const user = useAppSelector((state) => state.user);
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const TABS = [
     {
@@ -20,6 +26,17 @@ export function Navbar() {
       value: "/login",
     },
   ];
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await fetchProfile();
+
+      console.log("User", user);
+      dispatch(setCredentials(user));
+    };
+
+    fetchUser();
+  }, [user]);
 
   // To find the current page
   function CurrentTab(): string {

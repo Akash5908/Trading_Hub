@@ -59,4 +59,30 @@ router.post("/sign-in", async (req, res) => {
   }
 });
 
+router.get("/me", async (req, res) => {
+  console.log(req.query.authToken);
+  const { authToken } = req.query;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        token: String(authToken),
+      },
+    });
+
+    if (user === null) {
+      return res.send({ status: 404, message: "User not found!!" });
+    } else {
+      res.send({
+        message: "Profile found successfully!!",
+        status: 201,
+        profile: user,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.send(error);
+  }
+});
+
 export default router;

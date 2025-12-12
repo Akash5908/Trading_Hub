@@ -18,7 +18,7 @@ const config = {
             "value": "prisma-client"
         },
         "output": {
-            "value": "/Users/akashkumat/Desktop/Super30_Projects/exnesss_clone/http_server/src/generated/prisma",
+            "value": "/Users/akashkumat/Desktop/Super30_Projects/Trading_Hub/http_server/src/generated/prisma",
             "fromEnvVar": null
         },
         "config": {
@@ -32,7 +32,7 @@ const config = {
             }
         ],
         "previewFeatures": [],
-        "sourceFilePath": "/Users/akashkumat/Desktop/Super30_Projects/exnesss_clone/http_server/prisma/schema.prisma",
+        "sourceFilePath": "/Users/akashkumat/Desktop/Super30_Projects/Trading_Hub/http_server/prisma/schema.prisma",
         "isCustomOutput": true
     },
     "relativePath": "../../../prisma",
