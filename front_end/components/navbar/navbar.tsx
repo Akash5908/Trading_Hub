@@ -1,49 +1,94 @@
 "use client";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
-import { fetchProfile } from "@/lib/auth";
+import { getAuthToken, logout } from "@/lib/auth";
 import { useAppDispatch, useAppSelector } from "@/lib/hook";
-import { setCredentials } from "@/slices/userSlice";
+import { clearCredentials, setCredentials } from "@/slices/userSlice";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Store } from "@reduxjs/toolkit";
+import { useSelector } from "react-redux";
 
 export function Navbar() {
   const user = useAppSelector((state) => state.user);
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const [token, setToken] = useState<string | null>("");
 
-  const TABS = [
-    {
-      label: "Home",
-      value: "/",
-    },
-    {
-      label: "Dashboard",
-      value: "/dashboard",
-    },
-    {
-      label: "Login",
-      value: "/login",
-    },
-  ];
+  async function fetchToken() {
+    const token = await getAuthToken();
+    if (!token) return setToken(null);
+    setToken(token);
+  }
+
+  const TABS =
+    !user.id || user.id === ""
+      ? [
+          {
+            label: "Home",
+            value: "/",
+          },
+          {
+            label: "Dashboard",
+            value: "/dashboard",
+          },
+          {
+            label: "Login",
+            value: "/login",
+          },
+        ]
+      : [
+          {
+            label: "Home",
+            value: "/",
+          },
+          {
+            label: "Dashboard",
+            value: "/dashboard",
+          },
+          {
+            label: "Logout",
+            value: "/logout",
+          },
+        ];
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const user = await fetchProfile();
+    async function fetchProfile(authToken: string) {
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/me?authToken=${authToken}`
+      );
 
-      console.log("User", user);
-      dispatch(setCredentials(user));
-    };
+      const profilerData = res.data.profile;
+      console.log("profilerData", profilerData);
+      dispatch(
+        setCredentials({
+          id: profilerData?.id,
+          username: profilerData?.username,
+          token: profilerData?.token,
+        })
+      );
+    }
+    fetchToken();
+    if (token != null) fetchProfile(token);
+  }, [user, dispatch, token]);
 
-    fetchUser();
-  }, [user]);
+  useEffect(() => {
+    // Redirect to login page if not authenticated
+    if (token == null) router.push("/login");
+  }, [token]);
 
   // To find the current page
   function CurrentTab(): string {
     const tab = usePathname();
-
     return tab;
   }
+
+  const handleLogout = () => {
+    logout();
+    dispatch(clearCredentials());
+    // window.location.href = "/";
+  };
 
   return (
     <div className="flex flex-row justify-between w-[90vw]">
@@ -66,7 +111,9 @@ export function Navbar() {
               key={index}
               data-id={tab.value}
               type="button"
-              onClick={() => router.push(tab.value)}
+              onClick={() =>
+                tab.label === "Logout" ? handleLogout() : router.push(tab.value)
+              }
               className="px-4 py-0.5 text-zinc-600 transition-colors duration-300 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
             >
               {tab.label}

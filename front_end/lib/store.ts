@@ -1,6 +1,7 @@
 // store.ts
 import { configureStore } from "@reduxjs/toolkit";
 import { authSlice } from "../slices/userSlice";
+import { combineReducers } from "@reduxjs/toolkit";
 
 export function makeStore() {
   return configureStore({

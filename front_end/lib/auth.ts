@@ -1,6 +1,7 @@
 "use server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 export async function setAuthToken(token: string) {
   (await cookies()).set("access-token", token, {
@@ -19,10 +20,7 @@ export async function getAuthToken() {
   return token;
 }
 
-export async function fetchProfile() {
-  const authToken = await getAuthToken();
-  const res = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/me?authToken=${authToken}`
-  );
-  console.log(res);
+export async function logout() {
+  (await cookies()).delete("access-token");
+  revalidatePath("/");
 }

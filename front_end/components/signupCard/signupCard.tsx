@@ -55,14 +55,14 @@ const SignupCard = () => {
 
         {/* Using react-hook-form for validation */}
         <form
-          className=" space-y-5 justify-between w-100 h-90"
+          className=" space-y-5 my-4 justify-between w-100 h-90 "
           onSubmit={handleSubmit(onSubmit)}
         >
           <Input
             type="text"
             placeholder="Username"
             {...register("username")}
-            className="p-5"
+            className="p-5 text-4xl bg-white"
           />
           {errors.username && (
             <span className="text-red-500 text-[10px] ">
@@ -73,7 +73,7 @@ const SignupCard = () => {
             type="text"
             placeholder="Password"
             {...register("password")}
-            className="p-5 "
+            className="p-5  bg-white"
           />
           {errors.password && (
             <span className="text-red-500 text-[10px] ">
@@ -81,10 +81,19 @@ const SignupCard = () => {
             </span>
           )}
 
-          <Button className="w-full bg-white text-black" type="submit">
+          <Button
+            className="w-full bg-white text-black hover:text-white hover:bg-slate-900"
+            type="submit"
+          >
             Signup
           </Button>
         </form>
+        <span className="text-slate-500 font-light tracking-widest ">
+          Already have an account?{" "}
+          <a className="text-white" href="/login">
+            Login
+          </a>
+        </span>
       </div>
     </div>
   );

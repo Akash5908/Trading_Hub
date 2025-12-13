@@ -44,6 +44,7 @@ const LoginCard = () => {
       if (res.data.status === 201) {
         toast.success("Successfully signed it.");
         setAuthToken(res.data.token);
+        dispatch(setCredentials(res.data.profile));
         router.push("/dashboard");
       } else {
         toast.error(res.data.message);
@@ -84,7 +85,7 @@ const LoginCard = () => {
             type="text"
             placeholder="Password"
             {...register("password")}
-            className="p-5 "
+            className="p-5  bg-white"
           />
           {errors.password && (
             <span className="text-red-500 text-[10px] ">
@@ -92,8 +93,11 @@ const LoginCard = () => {
             </span>
           )}
 
-          <Button className="w-full bg-white text-black" type="submit">
-            Signup
+          <Button
+            className="w-full bg-white text-black hover:text-white hover:bg-slate-900"
+            type="submit"
+          >
+            {"->"} Login
           </Button>
         </form>
         <span className="text-slate-500 font-light tracking-widest ">
