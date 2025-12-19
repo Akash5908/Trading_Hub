@@ -1,0 +1,11 @@
+-- CreateTable
+CREATE TABLE "Eth_1_min" (
+    "id" SERIAL NOT NULL,
+    "time" DOUBLE PRECISION NOT NULL,
+    "open" DOUBLE PRECISION NOT NULL,
+    "high" DOUBLE PRECISION NOT NULL,
+    "low" DOUBLE PRECISION NOT NULL,
+    "close" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "Eth_1_min_pkey" PRIMARY KEY ("id")
+);

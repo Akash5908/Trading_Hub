@@ -3,12 +3,14 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 const initialState = {
   id: "",
   username: "",
+  userBalance: null,
   token: "",
 };
 
 type User = {
   id: string;
   username: string;
+  userBalance: number;
   token: string;
 };
 
@@ -19,10 +21,13 @@ export const authSlice = createSlice({
     setCredentials: (state, action) => {
       state.id = action.payload.id;
       state.username = action.payload.username;
+      state.userBalance = action.payload.userBalance;
       state.token = action.payload.token;
     },
     clearCredentials: (state) => {
-      ((state.id = ""), (state.token = "")), (state.username = "");
+      ((state.id = ""), (state.token = "")),
+        (state.username = ""),
+        (state.userBalance = null);
     },
   },
 });

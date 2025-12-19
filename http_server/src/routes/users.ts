@@ -13,6 +13,14 @@ router.post("/sign-up", async (req, res) => {
   var token = jwt.sign({ password: password }, privateKey);
 
   try {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        username: username,
+      },
+    });
+
+    if (existingUser) return res.status(301).json("Username already exist");
+
     const user = await prisma.user.create({
       data: {
         username: username,
@@ -25,7 +33,12 @@ router.post("/sign-up", async (req, res) => {
       message: "Signup successfully!!",
       token: token,
       status: 201,
-      profile: user,
+      profile: {
+        id: user?.id,
+        token: user?.token,
+        username: user?.username,
+        userBalance: user?.userBalance,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -33,7 +46,6 @@ router.post("/sign-up", async (req, res) => {
 });
 
 router.post("/sign-in", async (req, res) => {
-  console.log(req.body);
   const { username, password } = req.body;
 
   try {
@@ -50,7 +62,12 @@ router.post("/sign-in", async (req, res) => {
         message: "Signin successfully!!",
         status: 201,
         token: user?.token,
-        profile: user,
+        profile: {
+          id: user?.id,
+          token: user?.token,
+          username: user?.username,
+          userBalance: user?.userBalance,
+        },
       });
     }
   } catch (error) {
@@ -60,7 +77,6 @@ router.post("/sign-in", async (req, res) => {
 });
 
 router.get("/me", async (req, res) => {
-  console.log(req.query.authToken);
   const { authToken } = req.query;
 
   try {
@@ -76,7 +92,12 @@ router.get("/me", async (req, res) => {
       res.send({
         message: "Profile found successfully!!",
         status: 201,
-        profile: user,
+        profile: {
+          id: user?.id,
+          token: user?.token,
+          username: user?.username,
+          userBalance: user?.userBalance,
+        },
       });
     }
   } catch (error) {

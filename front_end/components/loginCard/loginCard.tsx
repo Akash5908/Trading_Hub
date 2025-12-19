@@ -18,7 +18,11 @@ const LoginCard = () => {
 
   const router = useRouter();
   const dispatch = useAppDispatch();
-  console.log(user);
+
+  useEffect(() => {
+    if (user.id) router.push("/");
+  }, [user]);
+
   const {
     register,
     handleSubmit,

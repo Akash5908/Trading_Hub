@@ -20,4 +20,33 @@ model User {
   username   String   @unique
   password   String
   token      String   @unique
+  userBalance Int     @default(5000)
+}
+
+
+model Btc_1_min {
+  id         Int      @id @default(autoincrement())
+  time   Float 
+  open  Float
+  high  Float
+  low   Float
+  close Float
+}
+
+model Sol_1_min {
+  id         Int      @id @default(autoincrement())
+  time   Float 
+  open  Float
+  high  Float
+  low   Float
+  close Float
+}
+
+model Eth_1_min {
+  id         Int      @id @default(autoincrement())
+  time   Float 
+  open  Float
+  high  Float
+  low   Float
+  close Float
 }

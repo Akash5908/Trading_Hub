@@ -19,6 +19,7 @@ export function Navbar() {
   async function fetchToken() {
     const token = await getAuthToken();
     if (!token) return setToken(null);
+
     setToken(token);
   }
 
@@ -66,17 +67,13 @@ export function Navbar() {
           id: profilerData?.id,
           username: profilerData?.username,
           token: profilerData?.token,
+          userBalance: profilerData?.userBalance,
         })
       );
     }
     fetchToken();
     if (token != null) fetchProfile(token);
   }, [user, dispatch, token]);
-
-  useEffect(() => {
-    // Redirect to login page if not authenticated
-    if (token == null) router.push("/login");
-  }, [token]);
 
   // To find the current page
   function CurrentTab(): string {
@@ -86,7 +83,8 @@ export function Navbar() {
 
   const handleLogout = () => {
     logout();
-    dispatch(clearCredentials());
+    dispatch({ type: "logout" });
+    console.log("user", user);
     // window.location.href = "/";
   };
 
@@ -95,7 +93,14 @@ export function Navbar() {
       <div>
         <h1 className="text-white text-2xl customize_text ">Trading Hub</h1>
       </div>
-      <div>
+      <div className="flex justify-center items-center">
+        {user?.userBalance && (
+          <div>
+            <h1 className="text-white text-md text-center customize_text mx-2 ">
+              User Balance: {user.userBalance}
+            </h1>
+          </div>
+        )}
         <AnimatedBackground
           defaultValue={CurrentTab()}
           className="rounded-lg bg-zinc-100 dark:bg-zinc-800"

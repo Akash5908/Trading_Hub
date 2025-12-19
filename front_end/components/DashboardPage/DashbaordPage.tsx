@@ -13,10 +13,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/lib/hook";
+import { FetchBtcTrade } from "@/lib/fetch";
 
 interface chartProps {
   date?: string;
-  time?: string;
+  time?: number;
   open: number;
   close: number;
   low: number;
@@ -32,6 +35,8 @@ interface formatedDateType {
 
 const DashboardPage = () => {
   const ws = useRef<WebSocket>();
+  const router = useRouter();
+  const user = useAppSelector((state) => state.user);
   const [isConnected, setIsConnected] = useState(false);
   const [chartData, setChartData] = useState<chartData>([]);
   const [selectedCurrency, setSelectedCurrency] = React.useState("BTCUSDT");
@@ -42,67 +47,105 @@ const DashboardPage = () => {
     return { date, time };
   }
 
+  // useEffect(() => {
+  //   ws.current = new WebSocket("ws://localhost:8080");
+  //   ws.current.onopen = (event) => {
+  //     console.log(`Connected: WebSocket Server!!`, event);
+  //     ws.current.onmessage = (event: any) => {
+  //       const parsedData = JSON.parse(event.data);
+  //       const formatedDate = FormatedDate(parsedData.k.T);
+
+  //       // setChartData((prevData) => [
+  //       //   ...prevData,
+  //       //   {
+  //       //     date: formatedDate.date,
+  //       //     time: formatedDate.date,
+  //       //     open: parsedData.k.o,
+  //       //     close: parsedData.k.c,
+  //       //     high: parsedData.k.h,
+  //       //     low: parsedData.k.l,
+  //       //   },
+  //       // ]);
+  //       console.log(chartData);
+  //       if (parsedData.k.x === true) {
+  //         const k = parsedData.k; // shorter alias
+
+  //         const labeled = {
+  //           // Binance k.t is ms; most chart libs want seconds
+  //           time: Math.floor(k.t / 1000),
+  //           open: parseFloat(k.o),
+  //           high: parseFloat(k.h),
+  //           low: parseFloat(k.l),
+  //           close: parseFloat(k.c),
+  //           volume: parseFloat(k.v),
+  //           closeTime: k.T,
+  //           quoteVolume: parseFloat(k.q),
+  //           tradeCount: k.n,
+  //         };
+
+  //         setChartData((prevData) => [
+  //           ...prevData,
+  //           {
+  //             time: labeled.time,
+  //             open: labeled.open,
+  //             high: labeled.high,
+  //             low: labeled.low,
+  //             close: labeled.close,
+  //           },
+  //         ]);
+  //       }
+  //     };
+  //   }
+  // }, []);
+
   useEffect(() => {
-    ws.current = new WebSocket("ws://localhost:8080");
-    ws.current.onopen = (event) => {
-      console.log(`Connected: WebSocket Server!!`, event);
-      ws.current.onmessage = (event: any) => {
-        const parsedData = JSON.parse(event.data);
-        const formatedDate = FormatedDate(parsedData.k.T);
-
-        // setChartData((prevData) => [
-        //   ...prevData,
-        //   {
-        //     date: formatedDate.date,
-        //     time: formatedDate.date,
-        //     open: parsedData.k.o,
-        //     close: parsedData.k.c,
-        //     high: parsedData.k.h,
-        //     low: parsedData.k.l,
-        //   },
-        // ]);
-      };
-    };
-  }, []);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await axios.get(
-          `https://api.binance.com/api/v3/klines?symbol=${selectedCurrency}&interval=1d&limit=100`
-        );
-        const data = res.data;
-
-        data.forEach((e) => {
-          const kline = e;
-          const labeled = {
-            time: FormatedDate(kline[0]).date,
-            open: parseFloat(kline[1]),
-            high: parseFloat(kline[2]),
-            low: parseFloat(kline[3]),
-            close: parseFloat(kline[4]),
-            volume: parseFloat(kline[5]),
-            closeTime: kline[6],
-            quoteVolume: parseFloat(kline[7]),
-            tradeCount: kline[8],
-          };
+    async function fetchData(selectedCurrency: string) {
+      if (selectedCurrency === "BTCUSDT") {
+        const klines = await FetchBtcTrade();
+        setChartData([]);
+        klines.map((item: chartProps) => {
           setChartData((prevData) => [
             ...prevData,
             {
-              time: labeled.time,
-              open: labeled.open,
-              close: labeled.close,
-              high: labeled.high,
-              low: labeled.low,
+              time: item.time,
+              open: item.open,
+              high: item.high,
+              low: item.low,
+              close: item.close,
             },
           ]);
         });
-      } catch (error) {
-        console.error(error);
+      }
+      if (selectedCurrency === "SOLUSDT") {
+        const klines = await FetchBtcTrade();
+        setChartData([]);
+        klines.map((item: chartProps) => {
+          setChartData((prevData) => [
+            ...prevData,
+            {
+              time: item.time,
+              open: item.open,
+              high: item.high,
+              low: item.low,
+              close: item.close,
+            },
+          ]);
+        });
       }
     }
-    fetchData();
+    fetchData(selectedCurrency);
   }, [selectedCurrency]);
+
+  async function HandleTrades() {
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,
+      {
+        userId: user.id,
+      }
+    );
+
+    console.log(res);
+  }
 
   function HandleSubscribe() {
     ws.current.send(
@@ -140,11 +183,13 @@ const DashboardPage = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div>
+        <div className="space-x-2 my-3">
           {chartData.length > 2 && <Chart data={chartData} />}
           <Button onClick={HandleSubscribe}>
             {isConnected ? "Unsubscribe" : "Subscribe"}
           </Button>
+
+          <Button onClick={HandleTrades}>Open Trade</Button>
         </div>
       </div>
     </div>

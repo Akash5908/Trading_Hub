@@ -1,13 +1,31 @@
 // store.ts
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, UnknownAction } from "@reduxjs/toolkit";
 import { authSlice } from "../slices/userSlice";
 import { combineReducers } from "@reduxjs/toolkit";
 
+const combinedReducer = combineReducers({
+  user: authSlice.reducer,
+});
+
+const rootReducer = (
+  state:
+    | Partial<{
+        user:
+          | { id: string; username: string; userBalance: null; token: string }
+          | undefined;
+      }>
+    | undefined,
+  action: UnknownAction
+) => {
+  if (action.type === "logout") {
+    state = undefined;
+  }
+  return combinedReducer(state, action);
+};
+
 export function makeStore() {
   return configureStore({
-    reducer: {
-      user: authSlice.reducer,
-    },
+    reducer: rootReducer,
     devTools: process.env.NODE_ENV !== "production",
   });
 }

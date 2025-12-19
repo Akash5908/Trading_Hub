@@ -7,6 +7,8 @@ import { createClient } from "redis";
 const redis = createClient();
 const app = express();
 const wss = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
+const wss2 = new WebSocket("wss://stream.binance.com:9443/ws/solusdt@kline_1m");
+const wss3 = new WebSocket("wss://stream.binance.com:9443/ws/ethusdt@kline_1m");
 
 console.log(wss);
 
@@ -26,7 +28,25 @@ wss.on("open", (ws: WebSocket) => {
 // This is when a message came from websocket connection.
 wss.on("message", (data: string) => {
   const trades = JSON.parse(data);
-  pushToRedis(redis, trades);
+  pushToRedis(redis, trades, "btc");
+});
+
+wss2.on("open", (ws: WebSocket) => {
+  console.log("hello");
+});
+
+wss2.on("message", (data: string) => {
+  const trades = JSON.parse(data);
+  pushToRedis(redis, trades, "sol");
+});
+
+wss3.on("open", (ws: WebSocket) => {
+  console.log("hello");
+});
+
+wss3.on("message", (data: string) => {
+  const trades = JSON.parse(data);
+  pushToRedis(redis, trades, "eth");
 });
 
 startRedisServer();
