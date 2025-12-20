@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Chart } from "@/components/Charts/tradingChart";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,9 @@ import {
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/hook";
-import { FetchBtcTrade } from "@/lib/fetch";
+import { FetchBtcTrade, FetchEthTrade, FetchSolTrade } from "@/lib/fetch";
+import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+import TradingComponent from "../TradingComponent/TradingComponent";
 
 interface chartProps {
   date?: string;
@@ -47,57 +50,6 @@ const DashboardPage = () => {
     return { date, time };
   }
 
-  // useEffect(() => {
-  //   ws.current = new WebSocket("ws://localhost:8080");
-  //   ws.current.onopen = (event) => {
-  //     console.log(`Connected: WebSocket Server!!`, event);
-  //     ws.current.onmessage = (event: any) => {
-  //       const parsedData = JSON.parse(event.data);
-  //       const formatedDate = FormatedDate(parsedData.k.T);
-
-  //       // setChartData((prevData) => [
-  //       //   ...prevData,
-  //       //   {
-  //       //     date: formatedDate.date,
-  //       //     time: formatedDate.date,
-  //       //     open: parsedData.k.o,
-  //       //     close: parsedData.k.c,
-  //       //     high: parsedData.k.h,
-  //       //     low: parsedData.k.l,
-  //       //   },
-  //       // ]);
-  //       console.log(chartData);
-  //       if (parsedData.k.x === true) {
-  //         const k = parsedData.k; // shorter alias
-
-  //         const labeled = {
-  //           // Binance k.t is ms; most chart libs want seconds
-  //           time: Math.floor(k.t / 1000),
-  //           open: parseFloat(k.o),
-  //           high: parseFloat(k.h),
-  //           low: parseFloat(k.l),
-  //           close: parseFloat(k.c),
-  //           volume: parseFloat(k.v),
-  //           closeTime: k.T,
-  //           quoteVolume: parseFloat(k.q),
-  //           tradeCount: k.n,
-  //         };
-
-  //         setChartData((prevData) => [
-  //           ...prevData,
-  //           {
-  //             time: labeled.time,
-  //             open: labeled.open,
-  //             high: labeled.high,
-  //             low: labeled.low,
-  //             close: labeled.close,
-  //           },
-  //         ]);
-  //       }
-  //     };
-  //   }
-  // }, []);
-
   useEffect(() => {
     async function fetchData(selectedCurrency: string) {
       if (selectedCurrency === "BTCUSDT") {
@@ -117,9 +69,26 @@ const DashboardPage = () => {
         });
       }
       if (selectedCurrency === "SOLUSDT") {
-        const klines = await FetchBtcTrade();
+        const klines = await FetchSolTrade();
         setChartData([]);
         klines.map((item: chartProps) => {
+          setChartData((prevData) => [
+            ...prevData,
+            {
+              time: item.time,
+              open: item.open,
+              high: item.high,
+              low: item.low,
+              close: item.close,
+            },
+          ]);
+        });
+      }
+      if (selectedCurrency === "ETHUSDT") {
+        const klines = await FetchEthTrade();
+        setChartData([]);
+        klines.map((item: chartProps) => {
+          //Adding new trade, slice to keep only last 100 trade
           setChartData((prevData) => [
             ...prevData,
             {
@@ -154,43 +123,227 @@ const DashboardPage = () => {
     setIsConnected((prev) => !prev);
   }
 
-  return (
-    <div className=" flex justify-center items-center h-screen">
-      <div className="flex flex-col  ">
-        {/* Dropdown to select the Crypto */}
-        <div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">Select Currency</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Selected Currency</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={selectedCurrency}
-                onValueChange={setSelectedCurrency}
-              >
-                <DropdownMenuRadioItem value="BTCUSDT">
-                  BTC
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="SOLUSDT">
-                  SOL
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="ETHUSDT">
-                  ETHEREUM
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="space-x-2 my-3">
-          {chartData.length > 2 && <Chart data={chartData} />}
-          <Button onClick={HandleSubscribe}>
-            {isConnected ? "Unsubscribe" : "Subscribe"}
-          </Button>
+  const currentPrice =
+    chartData.length > 0 ? chartData[chartData.length - 1]?.close : 0;
+  const previousPrice =
+    chartData.length > 1
+      ? chartData[chartData.length - 2]?.close
+      : currentPrice;
+  const priceChange = currentPrice - previousPrice;
+  const priceChangePercent = previousPrice
+    ? (priceChange / previousPrice) * 100
+    : 0;
+  const isPositive = priceChange >= 0;
 
-          <Button onClick={HandleTrades}>Open Trade</Button>
+  const getCurrencyName = (currency: string) => {
+    switch (currency) {
+      case "BTCUSDT":
+        return "Bitcoin";
+      case "ETHUSDT":
+        return "Ethereum";
+      case "SOLUSDT":
+        return "Solana";
+      default:
+        return currency;
+    }
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case "BTCUSDT":
+        return "BTC";
+      case "ETHUSDT":
+        return "ETH";
+      case "SOLUSDT":
+        return "SOL";
+      default:
+        return currency;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl my-[8vh]">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-5xl font-bold tracking-tight text-foreground text-white">
+              Crypto Trading Dashboard
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Real-time cryptocurrency market data and analysis
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Activity className="h-7 w-7 text-blue-600 animate-pulse" />
+            <span className="text-lg font-medium text-muted-foreground">
+              Live Market
+            </span>
+          </div>
         </div>
+
+        <Card className="border-border bg-card mb-6">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="min-w-[140px] font-semibold bg-transparent"
+                    >
+                      {getCurrencySymbol(selectedCurrency)}
+                      <svg
+                        className="ml-2 h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-popover">
+                    <DropdownMenuLabel className="text-popover-foreground">
+                      Select Currency
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={selectedCurrency}
+                      onValueChange={setSelectedCurrency}
+                    >
+                      <DropdownMenuRadioItem
+                        value="BTCUSDT"
+                        className="cursor-pointer"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Bitcoin</span>
+                          <span className="text-xs text-muted-foreground">
+                            BTC/USDT
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="ETHUSDT"
+                        className="cursor-pointer"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Ethereum</span>
+                          <span className="text-xs text-muted-foreground">
+                            ETH/USDT
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="SOLUSDT"
+                        className="cursor-pointer"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Solana</span>
+                          <span className="text-xs text-muted-foreground">
+                            SOL/USDT
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {chartData.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      {getCurrencyName(selectedCurrency)}
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-bold text-foreground">
+                        $
+                        {currentPrice.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                      <div
+                        className={`flex items-center gap-1 text-sm font-semibold ${
+                          isPositive ? "text-accent" : "text-destructive"
+                        }`}
+                      >
+                        {isPositive ? (
+                          <TrendingUp className="h-4 w-4" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4" />
+                        )}
+                        <span>
+                          {isPositive ? "+" : ""}
+                          {priceChangePercent.toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {chartData.length > 0 && (
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">High</p>
+                    <p className="font-semibold text-foreground">
+                      ${chartData[chartData.length - 1]?.high.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">Low</p>
+                    <p className="font-semibold text-foreground">
+                      ${chartData[chartData.length - 1]?.low.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-1">Open</p>
+                    <p className="font-semibold text-foreground">
+                      ${chartData[chartData.length - 1]?.open.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
+
+        {chartData.length > 2 && (
+          <Card className="border-border bg-card overflow-hidden">
+            <CardContent className="p-6">
+              <div className="rounded-lg overflow-hidden">
+                <Chart data={chartData} />
+              </div>
+
+              <div className="rounded-lg overflow-hidden my-4">
+                <TradingComponent asset={selectedCurrency} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {chartData.length <= 2 && (
+          <Card className="border-border bg-card">
+            <CardContent className="p-12">
+              <div className="flex flex-col items-center justify-center text-center gap-4">
+                <Activity className="h-12 w-12 text-muted-foreground animate-pulse" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    Loading Market Data
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Fetching real-time cryptocurrency prices...
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
