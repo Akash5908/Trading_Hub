@@ -19,6 +19,7 @@ import { useAppSelector } from "@/lib/hook";
 import { FetchBtcTrade, FetchEthTrade, FetchSolTrade } from "@/lib/fetch";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 import TradingComponent from "../TradingComponent/TradingComponent";
+import TradingPanel from "../TradePanel/TradePanel";
 
 interface chartProps {
   date?: string;
@@ -42,7 +43,9 @@ const DashboardPage = () => {
   const user = useAppSelector((state) => state.user);
   const [isConnected, setIsConnected] = useState(false);
   const [chartData, setChartData] = useState<chartData>([]);
-  const [selectedCurrency, setSelectedCurrency] = React.useState("BTCUSDT");
+  const [selectedCurrency, setSelectedCurrency] = useState<
+    "SOLUSDT" | "BTCUSDT" | "ETHUSDT"
+  >("BTCUSDT");
 
   function FormatedDate(value: string): formatedDateType {
     const date = new Date(value).toISOString().slice(0, 10);
@@ -315,9 +318,20 @@ const DashboardPage = () => {
 
         {chartData.length > 2 && (
           <Card className="border-border bg-card overflow-hidden">
-            <CardContent className="p-6">
-              <div className="rounded-lg overflow-hidden">
+            <CardContent className="p-6 ">
+              <div className=" flex flex-1/2  justify-center rounded-lg overflow-hidden">
                 <Chart data={chartData} />
+
+                <div>
+                  <TradingPanel
+                    assetPrice={Number(
+                      chartData[chartData.length - 1]?.open.toFixed(2)
+                    )}
+                    selectedCurrency={getCurrencySymbol(selectedCurrency)}
+                    userBalance={user.userBalance ? user.userBalance : 0}
+                    userName={user.username}
+                  />
+                </div>
               </div>
 
               <div className="rounded-lg overflow-hidden my-4">

@@ -22,7 +22,6 @@ const TradingComponent = ({
 }: {
   asset: "SOLUSDT" | "BTCUSDT" | "ETHUSDT";
 }) => {
-  console.log("asset", asset);
   const MenuArray = ["Price (USD)", "Trade (ID)", `Total (${assets[asset]})`];
   const ws = useRef<WebSocket>();
   const [tradeData, setTradeData] = useState<tradeProps[]>([]);
@@ -58,7 +57,6 @@ const TradingComponent = ({
       };
     };
   }, [tradeData]);
-  console.log("TradeData", tradeData);
 
   return (
     <div className="flex min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

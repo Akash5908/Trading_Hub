@@ -28,6 +28,8 @@ export const ChartComponent = (props) => {
     } = {},
   } = props;
 
+  const windowWidth = window.innerWidth;
+  console.log("Window Width", windowWidth);
   const chartContainerRef = useRef();
   const [chartData, setChartData] = useState<chartData>();
 
@@ -41,7 +43,7 @@ export const ChartComponent = (props) => {
         background: { type: ColorType.Solid, color: backgroundColor },
         textColor,
       },
-      width: 1200,
+      width: windowWidth > 1000 ? 800 : 1200,
       height: 600,
     });
     chart.timeScale().fitContent();
