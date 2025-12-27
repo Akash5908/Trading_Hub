@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
 import axios from "axios";
-
+import toast from "react-hot-toast";
 interface OrderProps {
   fees: number;
   leverage: number;
@@ -57,26 +57,11 @@ const TradingPanel = ({
           side: side,
           qty: orderData.volume,
           entryPrice: assetPrice,
+          userName: userName,
         }
       );
       if (res.data.status === 201) {
-        alert(res.data.message);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function closeTrade(tradeId: number) {
-    try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,
-        {
-          id: tradeId,
-        }
-      );
-      if (res.data.status === 201) {
-        alert(res.data.message);
+        toast.success("Order placed Successfully!");
       }
     } catch (error) {
       console.error(error);

@@ -83,20 +83,24 @@ client.on("connect", async () => {
             if (!closeOrder)
                 return;
             const asset = closeOrder?.asset;
-            const filteredOeders = openOrders.filter((e) => e.id !== id);
-            openOrders.push(...filteredOeders);
-            console.log("sent message back to callback qeueue");
-            client.xAdd("callback-queue", "*", {
-                message: JSON.stringify({
-                    id: id,
-                    asset: closeOrder?.asset,
-                    qty: closeOrder?.asset,
-                    currentPnl: calculatePnL(closeOrder, Prices[asset]),
-                    entryPrice: closeOrder?.entryPrice,
-                }),
-            });
-            // calling close braodcast func
-            broadcastCloseOrder(closeOrder);
+            const index = openOrders.findIndex((e) => e.id === id);
+            if (index > -1) {
+                openOrders.splice(index, 1);
+                console.log("sent message back to callback qeueue");
+                client.xAdd("callback-queue", "*", {
+                    message: JSON.stringify({
+                        id: id,
+                        asset: closeOrder?.asset,
+                        qty: closeOrder?.asset,
+                        userName: closeOrder.userName,
+                        currentPnl: calculatePnL(closeOrder, Prices[asset]),
+                        positionValue: calculatePositionValue(closeOrder),
+                        entryPrice: closeOrder?.entryPrice,
+                    }),
+                });
+                // calling close broadcast func
+                broadcastCloseOrder(closeOrder);
+            }
         }
     }
 });
@@ -104,6 +108,12 @@ export function calculatePnL(order, currentPrice) {
     const direction = order.side === "buy" ? 1 : -1;
     const priceDiff = currentPrice - order.entryPrice;
     return direction * priceDiff * order.qty;
+}
+// To calculate the exposure
+export function calculatePositionValue(order) {
+    const currentPrice = parseFloat(Prices[order.asset]);
+    const rawValue = order.qty * currentPrice;
+    return Math.round(rawValue * 100) / 100; // e.g. 8890.464 → 8890.46
 }
 //func to broadcast orders
 function broadcastOpenOrder(order) {
@@ -137,6 +147,7 @@ function updatePosition() {
         openOrders.map((trade) => {
             if (trade.asset === "BTC") {
                 trade.currentPnl = calculatePnL(trade, Prices["BTC"]);
+                trade.positionValue = calculatePositionValue(trade);
                 broadcastPosition(trade);
             }
             else if (trade.asset === "ETH") {

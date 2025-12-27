@@ -20,6 +20,7 @@ import { FetchBtcTrade, FetchEthTrade, FetchSolTrade } from "@/lib/fetch";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 import TradingComponent from "../TradingComponent/TradingComponent";
 import TradingPanel from "../TradePanel/TradePanel";
+import OrdersPage from "../OrdersPage/OrdersPage";
 
 interface chartProps {
   date?: string;
@@ -334,6 +335,12 @@ const DashboardPage = () => {
                 </div>
               </div>
 
+              {/* Orders panel  */}
+              <div>
+                <OrdersPage />
+              </div>
+
+              {/* Ask/sell Trade section */}
               <div className="rounded-lg overflow-hidden my-4">
                 <TradingComponent asset={selectedCurrency} />
               </div>

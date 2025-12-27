@@ -25,6 +25,7 @@ interface OpenOrder {
   kind?: string;
   qty: number;
   entryPrice: number;
+  positionValue?: number;
   userName: string;
   currentPnl?: number;
 }
@@ -115,21 +116,25 @@ client.on("connect", async () => {
       );
       if (!closeOrder) return;
       const asset = closeOrder?.asset;
-      const filteredOeders = openOrders.filter((e) => e.id !== id);
-      openOrders.push(...filteredOeders);
-      console.log("sent message back to callback qeueue");
-      client.xAdd("callback-queue", "*", {
-        message: JSON.stringify({
-          id: id,
-          asset: closeOrder?.asset,
-          qty: closeOrder?.asset,
-          currentPnl: calculatePnL(closeOrder, Prices[asset]),
-          entryPrice: closeOrder?.entryPrice,
-        }),
-      });
+      const index = openOrders.findIndex((e) => e.id === id);
+      if (index > -1) {
+        openOrders.splice(index, 1);
+        console.log("sent message back to callback qeueue");
+        client.xAdd("callback-queue", "*", {
+          message: JSON.stringify({
+            id: id,
+            asset: closeOrder?.asset,
+            qty: closeOrder?.asset,
+            userName: closeOrder.userName,
+            currentPnl: calculatePnL(closeOrder, Prices[asset]),
+            positionValue: calculatePositionValue(closeOrder),
+            entryPrice: closeOrder?.entryPrice,
+          }),
+        });
 
-      // calling close braodcast func
-      broadcastCloseOrder(closeOrder);
+        // calling close broadcast func
+        broadcastCloseOrder(closeOrder);
+      }
     }
   }
 });
@@ -141,6 +146,12 @@ export function calculatePnL(order: OpenOrder, currentPrice: number): number {
   return direction * priceDiff * order.qty;
 }
 
+// To calculate the exposure
+export function calculatePositionValue(order: OpenOrder): number {
+  const currentPrice = parseFloat(Prices[order.asset] as any);
+  const rawValue = order.qty * currentPrice;
+  return Math.round(rawValue * 100) / 100; // e.g. 8890.464 → 8890.46
+}
 //func to broadcast orders
 function broadcastOpenOrder(order: OpenOrder) {
   console.log("Open orders length", openOrders.length);
@@ -176,6 +187,7 @@ function updatePosition() {
     openOrders.map((trade: OpenOrder) => {
       if (trade.asset === "BTC") {
         trade.currentPnl = calculatePnL(trade, Prices["BTC"]);
+        trade.positionValue = calculatePositionValue(trade);
         broadcastPosition(trade);
       } else if (trade.asset === "ETH") {
         trade.currentPnl = calculatePnL(trade, Prices["ETH"]);
