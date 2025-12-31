@@ -7,12 +7,14 @@ import { RedisSubscriber } from "../lib/redisSubscriber.js";
 interface OpenOrder {
   id: string;
   asset: "BTC" | "SOL" | "ETH";
-  side: "buy" | "sell"; // long/short
+  side: "buy" | "sell"; // long/short,
+  kind?: string;
   qty: number;
   entryPrice: number;
+  positionValue?: number;
+  userName: string;
   currentPnl?: number;
 }
-
 const client = createClient();
 const redisSusbcriber = new RedisSubscriber();
 client.connect();
@@ -67,6 +69,18 @@ router.post("/close", async (req, res) => {
       order: OpenOrder;
     };
     console.log("Response from Engine", responseFromEngine);
+    const userName = responseFromEngine.order.userName;
+    const pnl = responseFromEngine.order.currentPnl || 0;
+    // Update the user balance
+
+    await prisma.user.updateMany({
+      where: { username: userName },
+      data: {
+        userBalance: {
+          increment: pnl, // +45.20 or -23.10
+        },
+      },
+    });
     return res.send({
       message: "Trade closed successfully",
       tradeId: responseFromEngine.order.id,

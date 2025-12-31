@@ -119,7 +119,7 @@ client.on("connect", async () => {
       const index = openOrders.findIndex((e) => e.id === id);
       if (index > -1) {
         openOrders.splice(index, 1);
-        console.log("sent message back to callback qeueue");
+        // On order closing seding it to callback-queue
         client.xAdd("callback-queue", "*", {
           message: JSON.stringify({
             id: id,

@@ -49,6 +49,17 @@ router.post("/close", async (req, res) => {
     try {
         const responseFromEngine = (await redisSusbcriber.waitForMessage(id));
         console.log("Response from Engine", responseFromEngine);
+        const userName = responseFromEngine.order.userName;
+        const pnl = responseFromEngine.order.currentPnl || 0;
+        // Update the user balance
+        await prisma.user.updateMany({
+            where: { username: userName },
+            data: {
+                userBalance: {
+                    increment: pnl, // +45.20 or -23.10
+                },
+            },
+        });
         return res.send({
             message: "Trade closed successfully",
             tradeId: responseFromEngine.order.id,

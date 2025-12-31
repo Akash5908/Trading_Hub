@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,16 @@ import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+
 interface OrderProps {
   fees: number;
-  leverage: number;
+  leverage: number; // e.g. 10 => 1:10
   margin: number;
   swap: number;
   pipValue: number;
-  volume: number;
+  volume: number; // units
+  totalPrice: number;
+  totalCost: number;
 }
 
 const TradingPanel = ({
@@ -31,21 +34,71 @@ const TradingPanel = ({
 }) => {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderData, setOrderData] = useState<OrderProps>({
-    fees: 1.25,
+    fees: 0,
     leverage: 10,
-    margin: 500,
-    swap: 0.05,
-    pipValue: 1.0,
-    volume: 1000,
+    margin: 0,
+    swap: 0,
+    pipValue: 0,
+    volume: 0,
+    totalCost: 0,
+    totalPrice: 0,
   });
-  console.log("Selected Currency", selectedCurrency);
+
+  // 🔹 Helper: calculate margin = (price * volume) / leverage
+  const calcMargin = (price: number, volume: number, leverage: number) => {
+    if (!price || !volume || !leverage) return 0;
+    const notional = price * volume; // position size in quote currency[web:278]
+    return notional / leverage; // margin requirement[web:283]
+  };
+
+  // 🔹 Helper: very simple pip value approximation (for FX-style assets)
+  const calcPipValue = (volume: number, price: number) => {
+    if (!volume || !price) return 0;
+    // Example: 1 pip = 0.0001 of price; pip value ≈ volume * 0.0001[web:276]
+    return volume * 0.0001;
+  };
+
+  const calcTotalCost = (orderData: OrderProps) => {
+    return orderData.margin + orderData.fees + orderData.swap;
+  };
+
+  // 🔹 Add Total Price (Notional Value)
+  const calcTotalPrice = (price: number, volume: number) => {
+    return price * volume; // Full position size[web:278]
+  };
+
+  useEffect(() => {
+    setOrderData((prev) => {
+      const margin = calcMargin(assetPrice, prev.volume, prev.leverage);
+      const pipValue = calcPipValue(prev.volume, assetPrice);
+      const totalPrice = calcTotalPrice(assetPrice, prev.volume);
+      const totalCost = calcTotalCost({ ...prev, margin });
+
+      return {
+        ...prev,
+        margin,
+        pipValue,
+        totalPrice,
+        totalCost,
+      };
+    });
+  }, [assetPrice, orderData.volume, orderData.leverage]);
+
   const orderArray = [
-    { label: "Fees", value: `$${orderData?.fees.toFixed(2)}` },
-    { label: "Leverage", value: `${orderData?.leverage}x` },
-    { label: "Margin", value: `$${orderData?.margin.toFixed(2)}` },
-    { label: "Swap", value: `$${orderData?.swap.toFixed(2)}` },
-    { label: "Pip Value", value: `$${orderData?.pipValue.toFixed(2)}` },
-    { label: "Volume in Units", value: orderData?.volume.toLocaleString() },
+    { label: "Fees", value: `$${orderData.fees.toFixed(2)}` },
+    { label: "Leverage", value: `${orderData.leverage}x` },
+    { label: "Margin", value: `$${orderData.margin.toFixed(2)}` },
+    { label: "Swap", value: `$${orderData.swap.toFixed(2)}` },
+    { label: "Pip Value", value: `$${orderData.pipValue.toFixed(2)}` },
+    {
+      label: "**Total Cost**",
+      value: `**$${orderData.totalCost?.toFixed(2)}**`,
+    },
+    { label: "Volume in Units", value: orderData.volume.toLocaleString() },
+    {
+      label: "Total Price",
+      value: `$${orderData.totalPrice?.toLocaleString()}`,
+    },
   ];
 
   async function openTrade() {
@@ -54,14 +107,26 @@ const TradingPanel = ({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,
         {
           asset: selectedCurrency,
-          side: side,
+          side,
           qty: orderData.volume,
           entryPrice: assetPrice,
-          userName: userName,
+          userName,
+          // you can also send leverage, margin, etc.
+          leverage: orderData.leverage,
         }
       );
       if (res.data.status === 201) {
         toast.success("Order placed Successfully!");
+        setOrderData({
+          fees: 0,
+          leverage: 10,
+          margin: 0,
+          swap: 0,
+          pipValue: 0,
+          volume: 0,
+          totalCost: 0,
+          totalPrice: 0,
+        });
       }
     } catch (error) {
       console.error(error);
@@ -130,7 +195,10 @@ const TradingPanel = ({
                 type="number"
                 value={orderData.volume}
                 onChange={(e) =>
-                  setOrderData({ ...orderData, volume: Number(e.target.value) })
+                  setOrderData((prev) => ({
+                    ...prev,
+                    volume: Number(e.target.value || 0),
+                  }))
                 }
                 placeholder="0.00"
                 className="bg-muted/30 border-muted focus-visible:ring-primary pr-12 font-mono"
@@ -139,6 +207,35 @@ const TradingPanel = ({
                 MAX
               </div>
             </div>
+          </div>
+
+          {/* Leverage Input (optional slider or input) */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label
+                htmlFor="leverage"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Leverage
+              </Label>
+              <span className="text-[10px] text-muted-foreground">
+                1:{orderData.leverage}
+              </span>
+            </div>
+            <Input
+              id="leverage"
+              type="number"
+              min={1}
+              max={2000}
+              value={orderData.leverage}
+              onChange={(e) =>
+                setOrderData((prev) => ({
+                  ...prev,
+                  leverage: Number(e.target.value || 1),
+                }))
+              }
+              className="bg-muted/30 border-muted focus-visible:ring-primary font-mono"
+            />
           </div>
 
           {/* Order Details */}
@@ -187,7 +284,9 @@ const TradingPanel = ({
         <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
           Avbl. Balance
         </span>
-        <span className="text-sm font-mono font-bold">${userBalance}</span>
+        <span className="text-sm font-mono font-bold">
+          ${userBalance.toFixed(2)}
+        </span>
       </div>
     </div>
   );
