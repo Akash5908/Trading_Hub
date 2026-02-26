@@ -1,7 +1,5 @@
-# Docker Compose Configuration
-
+ docker-compose.yml << 'EOF'
 version: '3.8'
-
 services:
   db:
     image: postgres:15
@@ -18,7 +16,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
   redis:
     image: redis:7-alpine
     ports:
@@ -31,7 +28,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
 volumes:
   postgres_data:
   redis_data:
