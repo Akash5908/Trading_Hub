@@ -147,7 +147,7 @@ EOF
     
     # Start Docker services
     print_status "Starting Docker services..."
-    docker-compose up -d
+    docker compose up -d
     
     # Wait for database to be ready
     print_status "Waiting for database to be ready..."
