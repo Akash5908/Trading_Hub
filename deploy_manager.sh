@@ -17,11 +17,11 @@ JWT_SECRET="your_jwt_secret_key_here"
 REDIS_URL="redis://localhost:6379"
 PORT=5001
 
-# Check if running as root
-if [[ $EUID -eq 0 ]]; then
-   echo -e "${RED}This script should not be run as root${NC}"
-   exit 1
-fi
+Check if running as root
+# if [[ $EUID -eq 0 ]]; then
+#    echo -e "${RED}This script should not be run as root${NC}"
+#    exit 1
+# fi
 
 # Function to print colored output
 print_status() {
