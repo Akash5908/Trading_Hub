@@ -6,6 +6,9 @@ import { createClient } from "redis";
 
 const redis = createClient({ url: process.env.REDIS_URL! });
 const app = express();
+app.listen(5000, () => {
+  console.log("Successfully running on port 5000");
+});
 const wss = new WebSocket("wss://stream.binance.us:9443/ws/btcusdt@kline_1m");
 const wss2 = new WebSocket("wss://stream.binance.us:9443/ws/solusdt@kline_1m");
 const wss3 = new WebSocket("wss://stream.binance.us:9443/ws/ethusdt@kline_1m");
