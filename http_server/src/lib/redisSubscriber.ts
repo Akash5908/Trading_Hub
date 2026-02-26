@@ -6,7 +6,7 @@ export class RedisSubscriber {
   private callbacks: Record<string, (value: unknown) => void>;
 
   constructor() {
-    this.client = createClient();
+    this.client = createClient({ url: process.env.REDIS_URL! });
     this.client.connect();
     this.runLoop();
     this.callbacks = {};
@@ -22,7 +22,7 @@ export class RedisSubscriber {
         {
           COUNT: 1,
           BLOCK: 0,
-        }
+        },
       );
 
       console.log("hi there");

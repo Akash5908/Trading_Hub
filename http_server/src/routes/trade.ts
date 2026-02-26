@@ -15,7 +15,7 @@ interface OpenOrder {
   userName: string;
   currentPnl?: number;
 }
-const client = createClient();
+const client = createClient({ url: process.env.REDIS_URL! });
 const redisSusbcriber = new RedisSubscriber();
 client.connect();
 const router = express.Router();
