@@ -4,8 +4,8 @@ import { WebSocketServer, WebSocket } from "ws";
 
 const app = express();
 const httpServer = app.listen(5002);
-const client = createClient();
-const pubsubClient = createClient();
+const client = createClient({ url: process.env.REDIS_URL! });
+const pubsubClient = createClient({ url: process.env.REDIS_URL! });
 const clients = new Set<WebSocket>();
 const wss = new WebSocketServer({ server: httpServer });
 
@@ -35,7 +35,7 @@ const priceHandler = {
     target: { [x: string]: any },
     prop: string | symbol,
     value: any,
-    receiver: any
+    receiver: any,
   ) {
     console.log(`✅ ${String(prop)} changed to: ${value}`);
 
@@ -79,11 +79,11 @@ client.on("connect", async () => {
       { key: "trade-stream", id: "$" },
       {
         BLOCK: 0,
-      }
+      },
     );
     const trade: OpenOrder = JSON.parse(
       //@ts-ignore
-      response[0].messages[0].message.message
+      response[0].messages[0].message.message,
     );
     if (response === null || !Array.isArray(response)) return;
 
@@ -112,7 +112,7 @@ client.on("connect", async () => {
       broadcastOpenOrder(trade);
     } else {
       const closeOrder: OpenOrder | undefined = openOrders.find(
-        (e) => e.id === trade.id
+        (e) => e.id === trade.id,
       );
       if (!closeOrder) return;
       const asset = closeOrder?.asset;

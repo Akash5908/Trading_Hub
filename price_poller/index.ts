@@ -4,7 +4,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { pushToRedis } from "./redis.js";
 import { createClient } from "redis";
 
-const redis = createClient();
+const redis = createClient({ url: process.env.REDIS_URL! });
 const app = express();
 const wss = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
 const wss2 = new WebSocket("wss://stream.binance.com:9443/ws/solusdt@kline_1m");
