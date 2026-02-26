@@ -66,12 +66,12 @@ client.on("connect", async () => {
   pubsubClient.subscribe("SOL_TRADE", (message) => {
     const parsedData = JSON.parse(message);
     Prices.SOL = parsedData.k.c;
-    watchedPrices.SOL = parsedData.k.c;
+    watchedPrices.SOL = parseFloat(parsedData.k.c);
   });
   pubsubClient.subscribe("ETH_TRADE", (message) => {
     const parsedData = JSON.parse(message);
     Prices.ETH = parsedData.k.c;
-    watchedPrices.ETH = parsedData.k.c;
+    watchedPrices.ETH = parseFloat(parsedData.k.c);
   });
 
   while (1) {
@@ -191,9 +191,11 @@ function updatePosition() {
         broadcastPosition(trade);
       } else if (trade.asset === "ETH") {
         trade.currentPnl = calculatePnL(trade, Prices["ETH"]);
+        trade.positionValue = calculatePositionValue(trade);
         broadcastPosition(trade);
       } else {
         trade.currentPnl = calculatePnL(trade, Prices["SOL"]);
+        trade.positionValue = calculatePositionValue(trade);
         broadcastPosition(trade);
       }
     });

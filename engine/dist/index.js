@@ -40,12 +40,12 @@ client.on("connect", async () => {
     pubsubClient.subscribe("SOL_TRADE", (message) => {
         const parsedData = JSON.parse(message);
         Prices.SOL = parsedData.k.c;
-        watchedPrices.SOL = parsedData.k.c;
+        watchedPrices.SOL = parseFloat(parsedData.k.c);
     });
     pubsubClient.subscribe("ETH_TRADE", (message) => {
         const parsedData = JSON.parse(message);
         Prices.ETH = parsedData.k.c;
-        watchedPrices.ETH = parsedData.k.c;
+        watchedPrices.ETH = parseFloat(parsedData.k.c);
     });
     while (1) {
         let response = await client.xRead({ key: "trade-stream", id: "$" }, {
@@ -86,7 +86,7 @@ client.on("connect", async () => {
             const index = openOrders.findIndex((e) => e.id === id);
             if (index > -1) {
                 openOrders.splice(index, 1);
-                console.log("sent message back to callback qeueue");
+                // On order closing seding it to callback-queue
                 client.xAdd("callback-queue", "*", {
                     message: JSON.stringify({
                         id: id,
@@ -152,10 +152,12 @@ function updatePosition() {
             }
             else if (trade.asset === "ETH") {
                 trade.currentPnl = calculatePnL(trade, Prices["ETH"]);
+                trade.positionValue = calculatePositionValue(trade);
                 broadcastPosition(trade);
             }
             else {
                 trade.currentPnl = calculatePnL(trade, Prices["SOL"]);
+                trade.positionValue = calculatePositionValue(trade);
                 broadcastPosition(trade);
             }
         });

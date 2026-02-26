@@ -95,7 +95,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-10 font-sans">
+    <div className="min-h- bg-background p-6 lg:p-10 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
         <header className="flex flex-col gap-2">
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">

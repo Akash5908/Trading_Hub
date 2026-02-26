@@ -20,7 +20,7 @@ const LoginCard = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (user.id) router.push("/");
+    if (user.id) router.push("/dashboard");
   }, [user]);
 
   const {
@@ -49,7 +49,6 @@ const LoginCard = () => {
         toast.success("Successfully signed it.");
         setAuthToken(res.data.token);
         dispatch(setCredentials(res.data.profile));
-        router.push("/dashboard");
       } else {
         toast.error(res.data.message);
       }
@@ -86,7 +85,7 @@ const LoginCard = () => {
             </span>
           )}
           <Input
-            type="text"
+            type="password"
             placeholder="Password"
             {...register("password")}
             className="p-5  bg-white"

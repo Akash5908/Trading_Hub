@@ -70,7 +70,7 @@ const SignupCard = () => {
             </span>
           )}
           <Input
-            type="text"
+            type="password"
             placeholder="Password"
             {...register("password")}
             className="p-5  bg-white"
