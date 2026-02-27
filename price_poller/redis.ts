@@ -1,4 +1,4 @@
-const assetArray = {
+export const assetArray = {
   btc: "BTC_TRADE",
   sol: "SOL_TRADE",
   eth: "ETH_TRADE",
@@ -8,7 +8,7 @@ const assetArray = {
 export async function pushToRedis(
   redis: any,
   trades: any,
-  asset: keyof typeof assetArray
+  asset: keyof typeof assetArray,
 ) {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   const channel = assetArray[asset];
