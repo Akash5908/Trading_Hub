@@ -74,23 +74,41 @@ const StoreEth1m = async (data: trade) => {
 
 const StoreTrade = () => {
   redis.SUBSCRIBE("BTC_TRADE", (data) => {
+    console.log(`[HTTP_SERVER] Received BTC data from Redis`);
     const trade = validData(data);
     if (trade) {
-      StoreBtc1m(trade);
+      console.log(`[HTTP_SERVER] Valid BTC trade data:`, trade);
+      StoreBtc1m(trade).then(() => {
+        console.log(`[HTTP_SERVER] Successfully stored BTC data in DB:`, trade);
+      }).catch((err) => {
+        console.error(`[HTTP_SERVER] Error storing BTC data in DB:`, err);
+      });
     }
   });
 
   redis.SUBSCRIBE("SOL_TRADE", (data) => {
+    console.log(`[HTTP_SERVER] Received SOL data from Redis`);
     const trade = validData(data);
     if (trade) {
-      StoreSol1m(trade);
+      console.log(`[HTTP_SERVER] Valid SOL trade data:`, trade);
+      StoreSol1m(trade).then(() => {
+        console.log(`[HTTP_SERVER] Successfully stored SOL data in DB:`, trade);
+      }).catch((err) => {
+        console.error(`[HTTP_SERVER] Error storing SOL data in DB:`, err);
+      });
     }
   });
 
   redis.SUBSCRIBE("ETH_TRADE", (data) => {
+    console.log(`[HTTP_SERVER] Received ETH data from Redis`);
     const trade = validData(data);
     if (trade) {
-      StoreEth1m(trade);
+      console.log(`[HTTP_SERVER] Valid ETH trade data:`, trade);
+      StoreEth1m(trade).then(() => {
+        console.log(`[HTTP_SERVER] Successfully stored ETH data in DB:`, trade);
+      }).catch((err) => {
+        console.error(`[HTTP_SERVER] Error storing ETH data in DB:`, err);
+      });
     }
   });
 };

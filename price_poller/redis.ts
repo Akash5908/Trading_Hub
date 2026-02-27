@@ -11,5 +11,12 @@ export async function pushToRedis(
   asset: keyof typeof assetArray
 ) {
   await new Promise((resolve) => setTimeout(resolve, 1000));
-  redis.publish(assetArray[asset], JSON.stringify(trades));
+  const channel = assetArray[asset];
+  console.log(`[PRICE_POLLER] Publishing to Redis channel: ${channel}`, {
+    time: trades.k?.t,
+    open: trades.k?.o,
+    close: trades.k?.c,
+  });
+  redis.publish(channel, JSON.stringify(trades));
+  console.log(`[PRICE_POLLER] Successfully published ${asset} data to Redis`);
 }

@@ -31,6 +31,7 @@ wss.on("open", (ws: WebSocket) => {
 // This is when a message came from websocket connection.
 wss.on("message", (data: string) => {
   const trades = JSON.parse(data);
+  console.log(`[PRICE_POLLER] Received BTC WebSocket message:`, { time: trades.k?.t });
   pushToRedis(redis, trades, "btc");
 });
 
@@ -40,6 +41,7 @@ wss2.on("open", (ws: WebSocket) => {
 
 wss2.on("message", (data: string) => {
   const trades = JSON.parse(data);
+  console.log(`[PRICE_POLLER] Received SOL WebSocket message:`, { time: trades.k?.t });
   pushToRedis(redis, trades, "sol");
 });
 
@@ -49,6 +51,7 @@ wss3.on("open", (ws: WebSocket) => {
 
 wss3.on("message", (data: string) => {
   const trades = JSON.parse(data);
+  console.log(`[PRICE_POLLER] Received ETH WebSocket message:`, { time: trades.k?.t });
   pushToRedis(redis, trades, "eth");
 });
 
