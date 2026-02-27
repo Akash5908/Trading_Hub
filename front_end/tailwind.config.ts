@@ -1,8 +1,7 @@
 import type { Config } from "tailwindcss";
-import tailwindcssAnimate from "tailwindcss-animate";
 
-const config: Config = {
-  darkMode: ["class"],
+const config = {
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -85,7 +84,7 @@ const config: Config = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
-    plugins: [tailwindcssAnimate],
+    plugins: [],
   },
 };
 export default config;

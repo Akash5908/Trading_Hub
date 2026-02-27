@@ -23,7 +23,7 @@ const TradingComponent = ({
   asset: "SOLUSDT" | "BTCUSDT" | "ETHUSDT";
 }) => {
   const MenuArray = ["Price (USD)", "Trade (ID)", `Total (${assets[asset]})`];
-  const ws = useRef<WebSocket>();
+  const ws = useRef<WebSocket>(null);
   const [tradeData, setTradeData] = useState<tradeProps[]>([]);
   const TradingRef = useRef<tradeProps[]>([]);
   const tradeArray = [];

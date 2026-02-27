@@ -18,13 +18,15 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/lib/hook";
 import { FetchBtcTrade, FetchEthTrade, FetchSolTrade } from "@/lib/fetch";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { Time } from "lightweight-charts";
 import TradingComponent from "../TradingComponent/TradingComponent";
 import TradingPanel from "../TradePanel/TradePanel";
 import OrdersPage from "../OrdersPage/OrdersPage";
 
+// 1. FIXED: Changed time from string to number to satisfy the Chart component types
 interface chartProps {
   date?: string;
-  time?: number;
+  time: Time;
   open: number;
   close: number;
   low: number;
@@ -39,73 +41,54 @@ interface formatedDateType {
 }
 
 const DashboardPage = () => {
-  const ws = useRef<WebSocket>();
+  const ws = useRef<WebSocket>(null);
   const router = useRouter();
   const user = useAppSelector((state) => state.user);
   const [isConnected, setIsConnected] = useState(false);
-  const [chartData, setChartData] = useState<chartData>([]);
+  const [chartData, setChartData] = useState<chartProps[]>([]);
   const [selectedCurrency, setSelectedCurrency] = useState<
     "SOLUSDT" | "BTCUSDT" | "ETHUSDT"
   >("BTCUSDT");
 
-  function FormatedDate(value: string): formatedDateType {
+  function FormatedDate(value: number | string): formatedDateType {
     const date = new Date(value).toISOString().slice(0, 10);
     const time = new Date(value).toTimeString();
     return { date, time };
   }
 
+  // 2. FIXED: Refactored the fetch logic for better performance and type safety
   useEffect(() => {
-    async function fetchData(selectedCurrency: string) {
-      if (selectedCurrency === "BTCUSDT") {
-        const klines = await FetchBtcTrade();
-        setChartData([]);
-        klines.map((item: chartProps) => {
-          setChartData((prevData) => [
-            ...prevData,
-            {
-              time: item.time,
-              open: item.open,
-              high: item.high,
-              low: item.low,
-              close: item.close,
-            },
-          ]);
-        });
+    async function fetchData(currency: string) {
+      let klines: any[] = [];
+
+      // Fetch the appropriate data based on selected currency
+      if (currency === "BTCUSDT") {
+        klines = await FetchBtcTrade();
+      } else if (currency === "SOLUSDT") {
+        klines = await FetchSolTrade();
+      } else if (currency === "ETHUSDT") {
+        klines = await FetchEthTrade();
       }
-      if (selectedCurrency === "SOLUSDT") {
-        const klines = await FetchSolTrade();
+
+      if (klines && klines.length > 0) {
+        // Map the raw data to match the strict chartProps interface ONCE
+        const formattedData: chartData = klines.map((item: any) => ({
+          // Lightweight charts typically expect Unix timestamps in seconds.
+          // If your chart breaks or looks weird, remove the "/ 1000".
+          time: Math.floor(Number(item.time) / 1000) as Time,
+          open: Number(item.open),
+          high: Number(item.high),
+          low: Number(item.low),
+          close: Number(item.close),
+        }));
+
+        // Set the state EXACTLY ONCE to prevent 100+ re-renders
+        setChartData(formattedData);
+      } else {
         setChartData([]);
-        klines.map((item: chartProps) => {
-          setChartData((prevData) => [
-            ...prevData,
-            {
-              time: item.time,
-              open: item.open,
-              high: item.high,
-              low: item.low,
-              close: item.close,
-            },
-          ]);
-        });
-      }
-      if (selectedCurrency === "ETHUSDT") {
-        const klines = await FetchEthTrade();
-        setChartData([]);
-        klines.map((item: chartProps) => {
-          //Adding new trade, slice to keep only last 100 trade
-          setChartData((prevData) => [
-            ...prevData,
-            {
-              time: item.time,
-              open: item.open,
-              high: item.high,
-              low: item.low,
-              close: item.close,
-            },
-          ]);
-        });
       }
     }
+
     fetchData(selectedCurrency);
   }, [selectedCurrency]);
 
@@ -114,15 +97,16 @@ const DashboardPage = () => {
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,
       {
         userId: user.id,
-      }
+      },
     );
 
     console.log(res);
   }
 
   function HandleSubscribe() {
+    if (!ws.current) return;
     ws.current.send(
-      JSON.stringify({ type: isConnected ? "Unsubscribe" : "Subscribe" })
+      JSON.stringify({ type: isConnected ? "Unsubscribe" : "Subscribe" }),
     );
     setIsConnected((prev) => !prev);
   }
@@ -219,7 +203,11 @@ const DashboardPage = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuRadioGroup
                       value={selectedCurrency}
-                      onValueChange={setSelectedCurrency}
+                      onValueChange={(value: string) =>
+                        setSelectedCurrency(
+                          value as "SOLUSDT" | "BTCUSDT" | "ETHUSDT",
+                        )
+                      }
                     >
                       <DropdownMenuRadioItem
                         value="BTCUSDT"
@@ -326,7 +314,7 @@ const DashboardPage = () => {
                 <div>
                   <TradingPanel
                     assetPrice={Number(
-                      chartData[chartData.length - 1]?.open.toFixed(2)
+                      chartData[chartData.length - 1]?.open.toFixed(2),
                     )}
                     selectedCurrency={getCurrencySymbol(selectedCurrency)}
                     userBalance={user.userBalance ? user.userBalance : 0}

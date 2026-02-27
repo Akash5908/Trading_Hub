@@ -138,7 +138,7 @@ export function Navbar() {
                   </span>
                 </div>
                 <span className="text-primary font-mono text-sm font-bold tracking-tighter">
-                  ${user.userBalance?.toLocaleString() || "0.00"}
+                  ${(Number(user.userBalance) || 0).toLocaleString() || "0.00"}
                 </span>
               </div>
               <Button

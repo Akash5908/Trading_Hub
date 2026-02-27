@@ -4,19 +4,29 @@ import {
   createChart,
   ColorType,
   CandlestickSeries,
+  Time,
 } from "lightweight-charts";
 import React, { useEffect, useRef, useState } from "react";
 
 interface chartData {
   // date?: Date;
-  time: string;
+  time: Time;
   open: number;
   close: number;
   low: number;
   high: number;
 }
 
-export const ChartComponent = (props) => {
+export const ChartComponent = (props: {
+  data: chartData[];
+  colors?: {
+    backgroundColor?: string;
+    lineColor?: string;
+    textColor?: string;
+    areaTopColor?: string;
+    areaBottomColor?: string;
+  };
+}) => {
   const {
     data,
     colors: {
@@ -30,14 +40,17 @@ export const ChartComponent = (props) => {
 
   const windowWidth = window.innerWidth;
   console.log("Window Width", windowWidth);
-  const chartContainerRef = useRef();
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   const [chartData, setChartData] = useState<chartData>();
 
   useEffect(() => {
     const handleResize = () => {
-      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      if (chartContainerRef.current) {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      }
     };
 
+    if (!chartContainerRef.current) return;
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: backgroundColor },
@@ -102,7 +115,7 @@ export const ChartComponent = (props) => {
 //     }
 // }
 
-export function Chart(props: { data: chartData }) {
+export function Chart(props: { data: chartData[] }) {
   const data = props.data;
   return <ChartComponent data={data}></ChartComponent>;
 }
