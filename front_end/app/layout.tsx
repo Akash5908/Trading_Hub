@@ -17,10 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Trading Hub",
-  description: "Architected a multi-service cryptocurrency trading platform featuring a real-time trading engine and
-price poller for BTC, SOL, and ETH.
-·Integrated Binance API via WebSockets for live data streaming and implemented low-latency trade
-execution logic.",
+  description: "A multi-service cryptocurrency trading platform featuring a real-time trading engine and price poller for BTC, SOL, and ETH. Integrated Binance API via WebSockets for live data streaming and implemented low-latency trade execution logic.",
 };
 
 export default function RootLayout({
