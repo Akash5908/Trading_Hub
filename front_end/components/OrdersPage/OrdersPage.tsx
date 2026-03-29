@@ -33,8 +33,13 @@ const OrdersPage = () => {
   const [isClosing, setIsClosing] = useState<string | null>(null);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5002";
+    const wsUrl = process.env.NEXT_PUBLIC_ENGINE_URL || "ws://localhost:5002";
+    console.log("[OrdersPage] Connecting to WebSocket:", wsUrl);
     ws.current = new WebSocket(wsUrl);
+
+    ws.current.onopen = () => {
+      console.log("[OrdersPage] WebSocket connected");
+    };
 
     if (ws.current) {
       ws.current.onmessage = (event: MessageEvent) => {
@@ -69,8 +74,16 @@ const OrdersPage = () => {
             });
           }
         } catch (error) {
-          console.error("[v0] Error parsing websocket message:", error);
+          console.error("[OrdersPage] Error parsing websocket message:", error);
         }
+      };
+
+      ws.current.onerror = (event) => {
+        console.error("[OrdersPage] WebSocket error:", event.type);
+      };
+
+      ws.current.onclose = () => {
+        console.log("[OrdersPage] WebSocket closed");
       };
     }
 

@@ -1,111 +1,246 @@
 # Trading Hub
 
-A real-time cryptocurrency trading platform built with modern web technologies. Features live price tracking from Binance, trading capabilities, position management, and a responsive dashboard.
+A **real-time cryptocurrency trading platform** with live candlestick charts, trading capabilities, and position management. Built with modern web technologies featuring live data streaming, WebSocket communication, and PostgreSQL storage.
+
+## Features
+
+### Real-Time Trading
+- Live cryptocurrency price tracking (BTC, ETH, SOL)
+- Interactive candlestick charts (TradingView-style)
+- Multiple timeframes: **1-second** and **1-minute** candles
+- Open/close trading positions (Long/Short)
+- Real-time P&L calculation
+
+### Technical Highlights
+- WebSocket-based real-time updates
+- Redis Streams for high-throughput message passing
+- PostgreSQL for persistent storage
+- Microservices architecture
+- TypeScript throughout
+
+## Quick Start
+
+```bash
+# Start all services
+./start.sh
+
+# Or manually start each service:
+cd price_poller && npm run dev    # Port 5000
+cd http_server && npm run dev     # Port 5001
+cd engine && npm run dev          # Port 5002
+cd front_end && npm run dev       # Port 3000
+```
+
+**Access the app**: http://localhost:3000
+
+---
 
 ## Architecture
 
-The application consists of three main services:
-
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Price Poller   │────▶│      Redis      │────▶│  HTTP Server    │
-│  (Port 5000)    │     │   (Pub/Sub)    │     │   (Port 5001)  │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-         │                                                │
-         │                    ┌─────────────────┐          │
-         └───────────────────▶│     Engine      │◀─────────┘
-                             │   (Port 5002)   │
-                             └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                         Binance API                         │
+│                   (Kline + Trade WebSocket)                  │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        Price Poller                         │
+│                   Collects market data                       │
+└──────────────┬──────────────────────────────────┬───────────┘
+               │                                  │
+               ▼                                  ▼
+┌──────────────────────────┐        ┌──────────────────────────┐
+│    Redis Streams         │        │    Redis Streams        │
+│  (live-btc, live-sol,   │        │  (trade-btc, trade-sol, │
+│   live-eth)             │        │   trade-eth)           │
+└──────────────┬──────────┘        └──────────────┬──────────┘
+               │                                  │
+               │          ┌───────────────────────┘
+               │          │
+               ▼          ▼
+┌──────────────────────────────┐  ┌──────────────────────────────┐
+│          Engine               │  │       HTTP Server            │
+│   - Order Management          │  │   - Data Aggregation         │
+│   - P&L Calculation           │  │   - REST API                 │
+│   - WebSocket Broadcasting    │  │   - PostgreSQL Storage       │
+└──────────────┬───────────────┘  └──────────────┬───────────────┘
+               │                                  │
+               │          ┌──────────────────────┘
+               │          │
+               ▼          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend                              │
+│              (Next.js + Lightweight Charts)                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-- **Price Poller**: Collects real-time price data from Binance WebSocket API and publishes to Redis
-- **HTTP Server**: Subscribes to Redis channels, stores validated data in PostgreSQL, handles REST APIs
-- **Engine**: Manages trading orders, calculates P&L, broadcasts position updates via WebSockets
+---
 
 ## Tech Stack
 
-### Frontend
-- **Framework:** Next.js 16
-- **Language:** TypeScript
-- **UI:** React 19, Tailwind CSS
-- **State Management:** Redux Toolkit
-- **Charts:** Lightweight Charts
-- **Deployment:** Vercel
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, TypeScript |
+| UI | Tailwind CSS, Shadcn/UI |
+| State | Redux Toolkit |
+| Charts | Lightweight Charts (TradingView) |
+| Backend | Express.js, TypeScript |
+| Database | PostgreSQL + Prisma ORM |
+| Cache/Queue | Redis (Streams) |
+| WebSocket | ws library |
 
-### Backend
-- **Framework:** Express.js
-- **Language:** TypeScript
-- **Database:** PostgreSQL with Prisma ORM
-- **Caching/Pub-Sub:** Redis
-- **WebSockets:** ws library
+---
 
 ## Project Structure
 
 ```
 Trading_Hub/
-├── front_end/           # Next.js frontend application
-│   ├── app/             # Next.js app router pages
-│   ├── components/      # React components
-│   ├── lib/             # Utilities, hooks, store
-│   └── slices/          # Redux slices
+├── front_end/              # Next.js frontend (Port 3000)
+│   ├── app/               # App router pages
+│   ├── components/         # React components
+│   │   ├── Charts/        # Trading chart component
+│   │   ├── DashboardPage/ # Main dashboard
+│   │   ├── OrdersPage/    # Open positions table
+│   │   ├── TradingPanel/  # Trading interface
+│   │   └── TradingComponent/ # Buy/Sell component
+│   └── lib/               # Redux store, API calls
 │
-├── http_server/          # Express.js REST API server
+├── http_server/           # REST API server (Port 5001)
 │   ├── src/
-│   │   ├── lib, Pr/         # Redisisma, Poller utilities
-│   │   └── routes/      # API route handlers
-│   └── prisma/          # Database schema
+│   │   ├── lib/
+│   │   │   ├── poller.ts       # 1-min candle storage
+│   │   │   ├── poller_1sec.ts  # 1-sec candle aggregation
+│   │   │   └── prisma.ts       # Database client
+│   │   └── routes/
+│   │       ├── trade.ts        # Trading endpoints
+│   │       └── users.ts        # Auth endpoints
+│   └── prisma/
+│       └── schema.prisma       # Database schema
 │
-├── price_poller/         # Binance WebSocket data collector
-│   ├── index.ts         # Main entry point
-│   └── redis.ts         # Redis publishing logic
+├── price_poller/         # Data collector (Port 5000)
+│   └── index.ts          # Binance WebSocket → Redis
 │
-├── engine/               # Trading engine & order management
-│   └── index.ts         # WebSocket server for orders
+├── engine/               # Trading engine (Port 5002)
+│   └── index.ts         # Order management, P&L, WebSocket
 │
-└── Dockerfile           # Docker orchestration
+├── start.sh             # Service startup script
+└── TECHNICAL_DOCUMENTATION.md  # Detailed technical docs
 ```
 
-## Features
+---
 
-### Real-Time Data
-- Live cryptocurrency price tracking (BTC, SOL, ETH)
-- 1-minute candlestick charts from Binance
-- WebSocket-based real-time updates
+## API Endpoints
 
 ### Trading
-- User authentication (signup/login)
-- Open/close trading positions
-- Buy/Sell functionality
-- Real-time P&L calculation
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/trade/open` | POST | Open a new position |
+| `/api/v1/trade/close` | POST | Close an existing position |
 
-### Dashboard
-- Interactive candlestick charts
-- Live portfolio balance
-- Order history
-- Position tracking with real-time updates
+### Market Data
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/trade/btc-klines` | GET | Get BTC candles |
+| `/api/v1/trade/sol-klines` | GET | Get SOL candles |
+| `/api/v1/trade/eth-klines` | GET | Get ETH candles |
 
-## Getting Started
+**Query Parameters**:
+- `duration=1s` - Get 1-second candles
+- `duration=1m` - Get 1-minute candles (default)
 
-### Prerequisites
+### Authentication
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/users/signup` | POST | User registration |
+| `/api/v1/users/login` | POST | User login |
 
-- Node.js 18+
-- PostgreSQL database
-- Redis server
+---
+
+## WebSocket Events
+
+**Engine WebSocket**: `ws://localhost:5002`
+
+### Server → Client Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `BTC_LIVE` | `{ time, open, high, low, close }` | BTC 1-min candle update |
+| `BTC_TRADE` | `{ price, quantity, timestamp }` | Individual BTC trade |
+| `SOL_LIVE` | `{ time, open, high, low, close }` | SOL 1-min candle update |
+| `SOL_TRADE` | `{ price, quantity, timestamp }` | Individual SOL trade |
+| `ETH_LIVE` | `{ time, open, high, low, close }` | ETH 1-min candle update |
+| `ETH_TRADE` | `{ price, quantity, timestamp }` | Individual ETH trade |
+| `open-orders` | Full order object | New order created |
+| `close-orders` | Full order object | Order closed |
+| `positions-update` | `{ id, currentPnl, positionValue }` | P&L update |
+
+---
+
+## Database Schema
+
+### Candlestick Tables
+```
+Btc_1_min, Sol_1_min, Eth_1_min  # 1-minute candles
+Btc_1_sec, Sol_1_sec, Eth_1_sec  # 1-second candles
+
+Columns: id, time (Unix timestamp), open, high, low, close
+```
+
+### User Table
+```
+User: id, username, password, token, userBalance
+```
+
+---
+
+## Key Technical Decisions
+
+### Redis Streams vs Pub/Sub
+
+**Why Redis Streams?**
+- Message persistence (data survives restart)
+- Message replay capability
+- Consumer group support for scaling
+
+**Trade-off**: Slightly more complex than Pub/Sub, but necessary for reliability.
+
+### 1-Second Candle Aggregation
+
+Binance doesn't provide 1-second kline API, so we:
+1. Subscribe to individual trade stream (`@trade`)
+2. Aggregate trades client-side for real-time charts
+3. Aggregate server-side for historical storage
+
+### Microservices Separation
+
+| Service | Responsibility |
+|---------|---------------|
+| Price Poller | Data ingestion only |
+| Engine | Real-time operations (orders, P&L) |
+| HTTP Server | REST API, data storage |
+| Frontend | UI, chart rendering |
+
+---
+
+## Environment Setup
+
+### Required Services
+- PostgreSQL (or use Docker)
+- Redis (or use Docker)
 
 ### Environment Variables
 
-Create `.env` files in each service directory:
+**http_server/.env**
+```env
+DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
+REDIS_URL=redis://localhost:6379
+```
 
 **front_end/.env**
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
-```
-
-**http_server/.env**
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/trading_hub
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key
+NEXT_PUBLIC_ENGINE_URL=ws://localhost:5002
 ```
 
 **price_poller/.env**
@@ -120,115 +255,76 @@ REDIS_URL=redis://localhost:6379
 PORT=5002
 ```
 
-### Installation
+---
+
+## Docker Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/Akash5908/Trading_Hub.git
-cd Trading_Hub
+# Start PostgreSQL
+docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword --name exness_clone postgres
 
-# Install frontend dependencies
-cd front_end
-npm install
+# Start Redis
+docker run -d -p 6379:6379 --name my-redis redis
 
-# Install backend dependencies
-cd ../http_server
-npm install
-
-# Install price poller dependencies
-cd ../price_poller
-npm install
-
-# Install engine dependencies
-cd ../engine
-npm install
-```
-
-### Running the Application
-
-#### Development Mode
-
-```bash
-# Start PostgreSQL and Redis (using Docker)
-docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB=trading_hub postgres
-docker run -d -p 6379:6379 redis
-
-# Setup database (http_server)
+# Setup database
 cd http_server
-npx prisma migrate dev
-
-# Start price poller (terminal 1)
-cd price_poller
-npm run dev
-
-# Start HTTP server (terminal 2)
-cd http_server
-npm run dev
-
-# Start engine (terminal 3)
-cd engine
-npm run dev
-
-# Start frontend (terminal 4)
-cd front_end
-npm run dev
+npx prisma db push
 ```
 
-#### Docker Deployment
+---
+
+## Development
 
 ```bash
-# Build and run all services
-docker-compose up --build
+# Install dependencies for each service
+cd front_end && npm install
+cd http_server && npm install
+cd price_poller && npm install
+cd engine && npm install
+
+# Run in development mode
+./start.sh
+
+# Or individually
+cd price_poller && npm run dev
+cd http_server && npm run dev
+cd engine && npm run dev
+cd front_end && npm run dev
 ```
 
-## API Endpoints
+---
 
-### Authentication
-- `POST /api/users/signup` - User registration
-- `POST /api/users/login` - User login
+## Technical Documentation
 
-### Trading
-- `POST /api/trade/open` - Open a new position
-- `POST /api/trade/close` - Close an existing position
+For detailed architecture, data flow diagrams, and interview talking points, see:
+- [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)
 
-### Market Data
-- `GET /api/trade/klines` - Get candlestick data
-- `GET /api/trade/orders` - Get user's orders
+---
 
-## WebSocket Events
+## Interview Highlights
 
-### Engine WebSocket (Port 5002)
+### Scalability
+- Stateless services that can scale horizontally
+- Redis Streams handle high-throughput message passing
+- Independent scaling of real-time vs REST operations
 
-**Outgoing:**
-- `open-orders` - Broadcast when new order is opened
-- `close-orders` - Broadcast when order is closed
-- `positions-update` - Real-time P&L updates
+### Real-Time Architecture
+- WebSocket for bidirectional, low-latency communication
+- Redis Streams for reliable message delivery with replay capability
+- Efficient batching with `XREAD COUNT + BLOCK`
 
-**Incoming:**
-- Create/close order messages via Redis
+### Data Integrity
+- Async order processing with callback queues
+- Real-time P&L calculation using JavaScript Proxy pattern
+- PostgreSQL for persistent, ACID-compliant storage
 
-## Database Schema
+### Challenges Solved
+1. **High-frequency updates**: Efficient batching with Redis XREAD
+2. **Connection resilience**: Auto-reconnect with message replay
+3. **Data aggregation**: Client + server-side 1-second candle building
 
-The application uses Prisma with the following main models:
-
-- **User** - User accounts and balances
-- **Btc_1_min**, **Sol_1_min**, **Eth_1_min** - Candlestick data
-- **Order** - Trading orders
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+---
 
 ## License
 
-ISC License
-
-## Acknowledgments
-
-- [Binance API](https://binance.us/) for real-time market data
-- [Lightweight Charts](https://tradingview.github.io/lightweight-charts/) for charting
-- [Prisma](https://www.prisma.io/) for database ORM
+ISC

@@ -15,25 +15,23 @@ interface trade {
 
 // Func to correctly format the data before storing
 const validData = (data: any) => {
-  const parsedData = JSON.parse(data);
+  try {
+    let parsedData = typeof data === 'string' ? JSON.parse(data) : data;
 
-  if (parsedData.k.x === true) {
-    const k = parsedData.k; // shorter alias
+    if (parsedData.x === true) {
+      return {
+        time: Math.floor(parsedData.t / 1000),
+        open: parseFloat(parsedData.o),
+        high: parseFloat(parsedData.h),
+        low: parseFloat(parsedData.l),
+        close: parseFloat(parsedData.c),
+      };
+    }
 
-    const labeled = {
-      // Binance k.t is ms; most chart libs want seconds
-      time: Math.floor(k.t / 1000),
-      open: parseFloat(k.o),
-      high: parseFloat(k.h),
-      low: parseFloat(k.l),
-      close: parseFloat(k.c),
-      //   volume: parseFloat(k.v),
-      //   closeTime: k.T,
-      //   quoteVolume: parseFloat(k.q),
-      //   tradeCount: k.n,
-    };
-
-    return labeled;
+    return null;
+  } catch (err) {
+    console.error("Error parsing data:", err);
+    return null;
   }
 };
 const StoreBtc1m = async (data: trade) => {
@@ -73,40 +71,28 @@ const StoreEth1m = async (data: trade) => {
 };
 
 const StoreTrade = () => {
-  redis.SUBSCRIBE("BTC_TRADE", (data) => {
-    console.log(`[HTTP_SERVER] Received BTC data from Redis`);
+  redis.SUBSCRIBE("BTC_KLINES", (data) => {
     const trade = validData(data);
     if (trade) {
-      console.log(`[HTTP_SERVER] Valid BTC trade data:`, trade);
-      StoreBtc1m(trade).then(() => {
-        console.log(`[HTTP_SERVER] Successfully stored BTC data in DB:`, trade);
-      }).catch((err) => {
+      StoreBtc1m(trade).catch((err) => {
         console.error(`[HTTP_SERVER] Error storing BTC data in DB:`, err);
       });
     }
   });
 
-  redis.SUBSCRIBE("SOL_TRADE", (data) => {
-    console.log(`[HTTP_SERVER] Received SOL data from Redis`);
+  redis.SUBSCRIBE("SOL_KLINES", (data) => {
     const trade = validData(data);
     if (trade) {
-      console.log(`[HTTP_SERVER] Valid SOL trade data:`, trade);
-      StoreSol1m(trade).then(() => {
-        console.log(`[HTTP_SERVER] Successfully stored SOL data in DB:`, trade);
-      }).catch((err) => {
+      StoreSol1m(trade).catch((err) => {
         console.error(`[HTTP_SERVER] Error storing SOL data in DB:`, err);
       });
     }
   });
 
-  redis.SUBSCRIBE("ETH_TRADE", (data) => {
-    console.log(`[HTTP_SERVER] Received ETH data from Redis`);
+  redis.SUBSCRIBE("ETH_KLINES", (data) => {
     const trade = validData(data);
     if (trade) {
-      console.log(`[HTTP_SERVER] Valid ETH trade data:`, trade);
-      StoreEth1m(trade).then(() => {
-        console.log(`[HTTP_SERVER] Successfully stored ETH data in DB:`, trade);
-      }).catch((err) => {
+      StoreEth1m(trade).catch((err) => {
         console.error(`[HTTP_SERVER] Error storing ETH data in DB:`, err);
       });
     }

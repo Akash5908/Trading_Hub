@@ -1,15 +1,15 @@
 "use client";
 import {
-  AreaSeries,
   createChart,
   ColorType,
   CandlestickSeries,
   Time,
+  IChartApi,
+  ISeriesApi,
 } from "lightweight-charts";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface chartData {
-  // date?: Date;
   time: Time;
   open: number;
   close: number;
@@ -19,6 +19,7 @@ interface chartData {
 
 export const ChartComponent = (props: {
   data: chartData[];
+  timeframe?: "1m" | "1s";
   colors?: {
     backgroundColor?: string;
     lineColor?: string;
@@ -29,28 +30,27 @@ export const ChartComponent = (props: {
 }) => {
   const {
     data,
-    colors: {
-      backgroundColor = "white",
-      lineColor = "#2962FF",
-      textColor = "black",
-      areaTopColor = "#2962FF",
-      areaBottomColor = "rgba(41, 98, 255, 0.28)",
-    } = {},
+    timeframe = "1m",
+    colors: { backgroundColor = "white", textColor = "black" } = {},
   } = props;
 
-  const windowWidth = window.innerWidth;
-  console.log("Window Width", windowWidth);
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [chartData, setChartData] = useState<chartData>();
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const lastCandleTimeRef = useRef<Time | null>(null);
+  const windowWidth = typeof window !== "undefined" ? window.innerWidth : 800;
 
   useEffect(() => {
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      if (chartRef.current && chartContainerRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+        });
       }
     };
 
     if (!chartContainerRef.current) return;
+
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: backgroundColor },
@@ -58,64 +58,110 @@ export const ChartComponent = (props: {
       },
       width: windowWidth > 1000 ? 800 : 1200,
       height: 600,
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: timeframe === "1s",
+        tickMarkFormatter: (time: number) => {
+          const date = new Date(time * 1000);
+          if (timeframe === "1s") {
+            return date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            });
+          }
+          return date.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+        },
+      },
     });
     chart.timeScale().fitContent();
 
-    const newSeries = chart.addSeries(CandlestickSeries, {
+    const series = chart.addSeries(CandlestickSeries, {
       upColor: "#26a69a",
       downColor: "#ef5350",
       borderVisible: false,
       wickUpColor: "#26a69a",
       wickDownColor: "#ef5350",
     });
-    console.log("newSeries", data);
-    newSeries.setData(data);
+
+    const sortedData = [...data]
+      .sort((a, b) => Number(a.time) - Number(b.time))
+      .filter(
+        (item, index, arr) => index === 0 || arr[index - 1].time !== item.time,
+      );
+    series.setData(sortedData);
+
+    chartRef.current = chart;
+    seriesRef.current = series;
+    lastCandleTimeRef.current = null;
 
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      lastCandleTimeRef.current = null;
     };
-  }, [
-    data,
-    backgroundColor,
-    lineColor,
-    textColor,
-    areaTopColor,
-    areaBottomColor,
-  ]);
+  }, [timeframe]);
+
+  useEffect(() => {
+    console.log("[Chart] useEffect triggered, data length:", data.length, "seriesRef:", !!seriesRef.current);
+    
+    if (!seriesRef.current) {
+      console.log("[Chart] seriesRef.current is null!");
+      return;
+    }
+    
+    if (data.length === 0) {
+      console.log("[Chart] data is empty");
+      return;
+    }
+
+    const sortedData = [...data]
+      .sort((a, b) => Number(a.time) - Number(b.time))
+      .filter(
+        (item, index, arr) =>
+          index === 0 || arr[index - 1].time !== item.time,
+      );
+
+    const lastCandle = sortedData[sortedData.length - 1];
+    const lastCandleTime = Number(lastCandle.time);
+    const currentSeriesData = seriesRef.current.data();
+    console.log("[Chart] current series data length:", currentSeriesData.length, "lastCandleTime:", lastCandleTime);
+    
+    if (currentSeriesData.length === 0) {
+      console.log("[Chart] setData called");
+      seriesRef.current.setData(sortedData);
+      chartRef.current?.timeScale().fitContent();
+      lastCandleTimeRef.current = lastCandleTime;
+    } else {
+      const lastSeriesCandle = currentSeriesData[currentSeriesData.length - 1];
+      const lastSeriesTime = Number(lastSeriesCandle.time);
+      console.log("[Chart] lastSeriesTime:", lastSeriesTime);
+      
+      if (lastCandleTime > lastSeriesTime) {
+        console.log("[Chart] update - new candle");
+        seriesRef.current.update(lastCandle);
+        lastCandleTimeRef.current = lastCandleTime;
+      } else if (lastCandleTime === lastSeriesTime) {
+        console.log("[Chart] update - same candle");
+        seriesRef.current.update(lastCandle);
+      } else {
+        console.log("[Chart] Skipping - candle is older");
+      }
+    }
+  }, [data]);
 
   return <div ref={chartContainerRef} />;
 };
 
-// {
-//     "e": "kline",
-//     "E": 1764403000038,
-//     "s": "BTCUSDT",
-//     "k": {
-//         "t": 1764402960000,
-//         "T": 1764403019999,
-//         "s": "BTCUSDT",
-//         "i": "1m",
-//         "f": 5580993125,
-//         "L": 5580995354,
-//         "o": "90499.98000000",
-//         "c": "90567.40000000",
-//         "h": "90567.40000000",
-//         "l": "90499.98000000",
-//         "v": "7.71688000",
-//         "n": 2230,
-//         "x": false,
-//         "q": "698576.68616690",
-//         "V": "6.60797000",
-//         "Q": "598201.83413260",
-//         "B": "0"
-//     }
-// }
-
-export function Chart(props: { data: chartData[] }) {
-  const data = props.data;
-  return <ChartComponent data={data}></ChartComponent>;
+export function Chart(props: { data: chartData[]; timeframe?: "1m" | "1s" }) {
+  return <ChartComponent data={props.data} timeframe={props.timeframe} />;
 }

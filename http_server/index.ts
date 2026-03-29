@@ -3,6 +3,7 @@ import users from "./src/routes/users.js";
 import trade from "./src/routes/trade.js";
 import cors from "cors";
 import StoreTrade from "./src/lib/poller.js";
+import { start1SecPoller } from "./src/lib/poller_1sec.js";
 
 const app = express();
 
@@ -24,4 +25,5 @@ function startServer() {
 }
 
 StoreTrade();
+start1SecPoller();
 startServer();

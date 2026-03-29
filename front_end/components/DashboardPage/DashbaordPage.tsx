@@ -41,14 +41,28 @@ interface formatedDateType {
 }
 
 const DashboardPage = () => {
-  const ws = useRef<WebSocket>(null);
+  const ws = useRef<WebSocket | null>(null);
   const router = useRouter();
   const user = useAppSelector((state) => state.user);
   const [isConnected, setIsConnected] = useState(false);
   const [chartData, setChartData] = useState<chartProps[]>([]);
+  const [livePrice, setLivePrice] = useState<number>(0);
   const [selectedCurrency, setSelectedCurrency] = useState<
     "SOLUSDT" | "BTCUSDT" | "ETHUSDT"
   >("BTCUSDT");
+  const [selectedTimeframe, setSelectedTimeframe] = useState<"1m" | "1s">("1s");
+  const [isLoading, setIsLoading] = useState(false);
+  const chartDataRef = useRef<chartProps[]>([]);
+  const currencyRef = useRef(selectedCurrency);
+  const timeframeRef = useRef(selectedTimeframe);
+
+  useEffect(() => {
+    currencyRef.current = selectedCurrency;
+  }, [selectedCurrency]);
+
+  useEffect(() => {
+    timeframeRef.current = selectedTimeframe;
+  }, [selectedTimeframe]);
 
   function FormatedDate(value: number | string): formatedDateType {
     const date = new Date(value).toISOString().slice(0, 10);
@@ -56,41 +70,198 @@ const DashboardPage = () => {
     return { date, time };
   }
 
-  // 2. FIXED: Refactored the fetch logic for better performance and type safety
   useEffect(() => {
-    async function fetchData(currency: string) {
+    async function fetchData(currency: string, timeframe: string) {
       let klines: any[] = [];
 
-      // Fetch the appropriate data based on selected currency
       if (currency === "BTCUSDT") {
-        klines = await FetchBtcTrade();
+        klines = await FetchBtcTrade(timeframe);
       } else if (currency === "SOLUSDT") {
-        klines = await FetchSolTrade();
+        klines = await FetchSolTrade(timeframe);
       } else if (currency === "ETHUSDT") {
-        klines = await FetchEthTrade();
+        klines = await FetchEthTrade(timeframe);
       }
 
       if (klines && klines.length > 0) {
-        // Map the raw data to match the strict chartProps interface ONCE
         const formattedData: chartData = klines.map((item: any) => ({
-          // Lightweight charts typically expect Unix timestamps in seconds.
-          // If your chart breaks or looks weird, remove the "/ 1000".
-          time: Math.floor(Number(item.time) / 1000) as Time,
+          time: Number(item.time) as Time,
           open: Number(item.open),
           high: Number(item.high),
           low: Number(item.low),
           close: Number(item.close),
         }));
-
-        // Set the state EXACTLY ONCE to prevent 100+ re-renders
         setChartData(formattedData);
       } else {
         setChartData([]);
       }
     }
 
-    fetchData(selectedCurrency);
-  }, [selectedCurrency]);
+    fetchData(selectedCurrency, selectedTimeframe);
+  }, [selectedCurrency, selectedTimeframe]);
+
+  useEffect(() => {
+    chartDataRef.current = chartData;
+  }, [chartData]);
+
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 5;
+    
+    function connectWebSocket() {
+      const wsUrl = process.env.NEXT_PUBLIC_ENGINE_URL || "ws://localhost:5002";
+      console.log("🔌 Connecting to WebSocket:", wsUrl);
+      const socket = new WebSocket(wsUrl);
+
+      socket.onopen = () => {
+        console.log("✅ Connected to Engine WebSocket");
+        setIsConnected(true);
+        retryCount = 0;
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          const currentCurrency = currencyRef.current;
+          const currentTimeframe = timeframeRef.current;
+          console.log("[WS] Received:", message.type, "for currency:", currentCurrency, "tf:", currentTimeframe);
+          
+          const currencyMap: Record<string, string> = {
+            "BTC_LIVE": "BTCUSDT",
+            "SOL_LIVE": "SOLUSDT",
+            "ETH_LIVE": "ETHUSDT",
+            "BTC_TRADE": "BTCUSDT",
+            "SOL_TRADE": "SOLUSDT",
+            "ETH_TRADE": "ETHUSDT",
+          };
+
+          const msgCurrency = currencyMap[message.type];
+          if (!msgCurrency || msgCurrency !== currentCurrency) {
+            console.log("[WS] Filtered out - msgCurrency:", msgCurrency, "currentCurrency:", currentCurrency);
+            return;
+          }
+          console.log("[WS] Processing message for", msgCurrency);
+
+          if (message.type.endsWith("_LIVE")) {
+            setLivePrice(message.data.close);
+          }
+          if (message.type.endsWith("_TRADE")) {
+            setLivePrice(message.data.price);
+          }
+
+          if (currentTimeframe === "1m") {
+            if (message.type.endsWith("_LIVE")) {
+              const liveData = message.data;
+              const liveTime = liveData.time;
+              console.log("[1m] LIVE update:", liveTime, liveData.close);
+              
+              setChartData((prev) => {
+                console.log("[1m] prev length:", prev.length);
+                if (prev.length === 0) return prev;
+                const updated = [...prev];
+                const lastIndex = updated.length - 1;
+                const lastTime = Number(updated[lastIndex].time);
+                
+                if (lastTime === liveTime) {
+                  console.log("[1m] Updating same candle");
+                  updated[lastIndex] = {
+                    time: liveTime as Time,
+                    open: liveData.open,
+                    high: Math.max(liveData.high, updated[lastIndex].high),
+                    low: Math.min(liveData.low, updated[lastIndex].low),
+                    close: liveData.close,
+                  };
+                } else if (liveTime > lastTime) {
+                  console.log("[1m] New candle");
+                  updated.push({
+                    time: liveTime as Time,
+                    open: liveData.open,
+                    high: liveData.high,
+                    low: liveData.low,
+                    close: liveData.close,
+                  });
+                } else {
+                  console.log("[1m] Skipping old candle");
+                }
+                return updated;
+              });
+            }
+          }
+
+          if (currentTimeframe === "1s") {
+            if (message.type.endsWith("_TRADE")) {
+              const tradeData = message.data;
+              const price = tradeData.price;
+              const tickTime = Math.floor(Number(tradeData.timestamp) / 1000);
+              const now = Math.floor(Date.now() / 1000);
+              
+              if (now - tickTime > 10) {
+                console.log("[1s] Skipping old trade:", { tickTime, now, diff: now - tickTime });
+                return;
+              }
+              
+              setChartData((prev) => {
+                const lastIndex = prev.length - 1;
+                const lastTime = lastIndex >= 0 ? Number(prev[lastIndex].time) : 0;
+                
+                if (lastTime === tickTime) {
+                  const last = prev[lastIndex];
+                  return [...prev.slice(0, lastIndex), {
+                    time: tickTime as Time,
+                    open: last.open,
+                    high: Math.max(last.high, price),
+                    low: Math.min(last.low, price),
+                    close: price,
+                  }];
+                } else if (tickTime > lastTime) {
+                  const newCandle = {
+                    time: tickTime as Time,
+                    open: price,
+                    high: price,
+                    low: price,
+                    close: price,
+                  };
+                  const updated = [...prev, newCandle];
+                  if (updated.length > 300) {
+                    return updated.slice(-300);
+                  }
+                  return updated;
+                }
+                return prev;
+              });
+            }
+          }
+        } catch (err) {
+          console.error("WebSocket message error:", err);
+        }
+      };
+
+      socket.onclose = () => {
+        console.log("❌ Engine WebSocket disconnected");
+        setIsConnected(false);
+        ws.current = null;
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Reconnecting in 2s... (attempt ${retryCount})`);
+          setTimeout(connectWebSocket, 2000);
+        }
+      };
+
+      socket.onerror = (event) => {
+        console.error("WebSocket error:", event.type, event.target?.readyState);
+      };
+
+      ws.current = socket;
+    }
+
+    connectWebSocket();
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, []);
 
   async function HandleTrades() {
     const res = await axios.post(
@@ -112,13 +283,13 @@ const DashboardPage = () => {
   }
 
   const currentPrice =
-    chartData.length > 0 ? chartData[chartData.length - 1]?.close : 0;
+    chartData.length > 0 ? chartData[chartData.length - 1]?.close : livePrice;
   const previousPrice =
     chartData.length > 1
       ? chartData[chartData.length - 2]?.close
       : currentPrice;
   const priceChange = currentPrice - previousPrice;
-  const priceChangePercent = previousPrice
+  const priceChangePercent = previousPrice && previousPrice > 0
     ? (priceChange / previousPrice) * 100
     : 0;
   const isPositive = priceChange >= 0;
@@ -246,6 +417,56 @@ const DashboardPage = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="min-w-[80px] font-semibold bg-transparent"
+                    >
+                      {selectedTimeframe.toUpperCase()}
+                      <svg
+                        className="ml-2 h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-40 bg-popover">
+                    <DropdownMenuLabel className="text-popover-foreground">
+                      Timeframe
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={selectedTimeframe}
+                      onValueChange={(value: string) =>
+                        setSelectedTimeframe(value as "1m" | "1s")
+                      }
+                    >
+                      <DropdownMenuRadioItem
+                        value="1m"
+                        className="cursor-pointer"
+                      >
+                        <span className="font-semibold">1 Minute</span>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="1s"
+                        className="cursor-pointer"
+                      >
+                        <span className="font-semibold">1 Second</span>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {chartData.length > 0 && (
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -305,17 +526,20 @@ const DashboardPage = () => {
           </CardHeader>
         </Card>
 
-        {chartData.length > 2 && (
+        {(chartData.length > 2 || selectedTimeframe === "1s") && (
           <Card className="border-border bg-card overflow-hidden">
             <CardContent className="p-6 ">
+              {isLoading && (
+                <div className="text-center py-4 text-muted-foreground">
+                  Loading {selectedTimeframe} chart data...
+                </div>
+              )}
               <div className=" flex flex-1/2  justify-center rounded-lg overflow-hidden">
-                <Chart data={chartData} />
+                <Chart data={chartData} timeframe={selectedTimeframe} />
 
                 <div>
                   <TradingPanel
-                    assetPrice={Number(
-                      chartData[chartData.length - 1]?.open.toFixed(2),
-                    )}
+                    assetPrice={Number(currentPrice.toFixed(2))}
                     selectedCurrency={getCurrencySymbol(selectedCurrency)}
                     userBalance={user.userBalance ? user.userBalance : 0}
                     userName={user.username}
@@ -336,7 +560,7 @@ const DashboardPage = () => {
           </Card>
         )}
 
-        {chartData.length <= 2 && (
+        {chartData.length <= 2 && selectedTimeframe === "1m" && (
           <Card className="border-border bg-card">
             <CardContent className="p-12">
               <div className="flex flex-col items-center justify-center text-center gap-4">

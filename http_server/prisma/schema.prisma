@@ -50,3 +50,30 @@ model Eth_1_min {
   low   Float
   close Float
 }
+
+model Btc_1_sec {
+  id         Int      @id @default(autoincrement())
+  time   Float 
+  open  Float
+  high  Float
+  low   Float
+  close Float
+}
+
+model Sol_1_sec {
+  id         Int      @id @default(autoincrement())
+  time   Float 
+  open  Float
+  high  Float
+  low   Float
+  close Float
+}
+
+model Eth_1_sec {
+  id         Int      @id @default(autoincrement())
+  time   Float 
+  open  Float
+  high  Float
+  low   Float
+  close Float
+}

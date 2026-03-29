@@ -95,13 +95,14 @@ router.post("/close", async (req, res) => {
 router.get("/btc-klines", async (req, res) => {
   const { duration } = req.query;
   try {
-    if (duration === "1d") {
-      //   const data = await prisma.btc_1_min.findMany();
-    } else if (duration === "1s") {
-      //   const data = await prisma.btc_1_min.findMany();
+    if (duration === "1s") {
+      const data = await prisma.btc_1_sec.findMany({
+        orderBy: { time: "desc" },
+        take: 300,
+      });
+      return res.status(201).json(data.reverse());
     } else {
       const data = await prisma.btc_1_min.findMany();
-
       return res.status(201).json(data);
     }
   } catch (error) {
@@ -112,13 +113,14 @@ router.get("/btc-klines", async (req, res) => {
 router.get("/sol-klines", async (req, res) => {
   const { duration } = req.query;
   try {
-    if (duration === "1d") {
-      //   const data = await prisma.btc_1_min.findMany();
-    } else if (duration === "1s") {
-      //   const data = await prisma.btc_1_min.findMany();
+    if (duration === "1s") {
+      const data = await prisma.sol_1_sec.findMany({
+        orderBy: { time: "desc" },
+        take: 300,
+      });
+      return res.status(201).json(data.reverse());
     } else {
       const data = await prisma.sol_1_min.findMany();
-
       return res.status(201).json(data);
     }
   } catch (error) {
@@ -129,13 +131,14 @@ router.get("/sol-klines", async (req, res) => {
 router.get("/eth-klines", async (req, res) => {
   const { duration } = req.query;
   try {
-    if (duration === "1d") {
-      //   const data = await prisma.btc_1_min.findMany();
-    } else if (duration === "1s") {
-      //   const data = await prisma.btc_1_min.findMany();
+    if (duration === "1s") {
+      const data = await prisma.eth_1_sec.findMany({
+        orderBy: { time: "desc" },
+        take: 300,
+      });
+      return res.status(201).json(data.reverse());
     } else {
       const data = await prisma.eth_1_min.findMany();
-
       return res.status(201).json(data);
     }
   } catch (error) {
