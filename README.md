@@ -4,19 +4,20 @@ A **real-time cryptocurrency trading platform** with live candlestick charts, tr
 
 ## Features
 
-### Real-Time Trading
-- Live cryptocurrency price tracking (BTC, ETH, SOL)
-- Interactive candlestick charts (TradingView-style)
-- Multiple timeframes: **1-second** and **1-minute** candles
-- Open/close trading positions (Long/Short)
-- Real-time P&L calculation
+### Trading
+- **Real-time Charts** - TradingView-style candlestick charts
+- **Multiple Timeframes** - 1-second and 1-minute candle updates
+- **Currency Pairs** - BTC, ETH, SOL against USDT
+- **Open/Close Positions** - Long (Buy) and Short (Sell)
+- **Real-time P&L** - Live profit/loss calculation
+- **Position Management** - Track and close open orders
 
-### Technical Highlights
-- WebSocket-based real-time updates
-- Redis Streams for high-throughput message passing
-- PostgreSQL for persistent storage
-- Microservices architecture
-- TypeScript throughout
+### Technical
+- **WebSocket Real-time Updates** - Live price streaming
+- **Redis Streams** - Message buffering and persistence
+- **PostgreSQL Storage** - Historical candle data
+- **Microservices Architecture** - Scalable design
+- **TypeScript** - Type-safe throughout
 
 ## Quick Start
 
@@ -24,14 +25,14 @@ A **real-time cryptocurrency trading platform** with live candlestick charts, tr
 # Start all services
 ./start.sh
 
-# Or manually start each service:
+# Or manually:
 cd price_poller && npm run dev    # Port 5000
 cd http_server && npm run dev     # Port 5001
 cd engine && npm run dev          # Port 5002
 cd front_end && npm run dev       # Port 3000
 ```
 
-**Access the app**: http://localhost:3000
+**Access**: http://localhost:3000
 
 ---
 
@@ -39,31 +40,32 @@ cd front_end && npm run dev       # Port 3000
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Binance API                         │
+│                        Binance API                           │
 │                   (Kline + Trade WebSocket)                  │
 └─────────────────────────────┬───────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                        Price Poller                         │
-│                   Collects market data                       │
+│                   (Port 5000 - Data Ingestion)              │
 └──────────────┬──────────────────────────────────┬───────────┘
                │                                  │
                ▼                                  ▼
 ┌──────────────────────────┐        ┌──────────────────────────┐
-│    Redis Streams         │        │    Redis Streams        │
+│    Redis Streams         │        │    Redis Streams         │
 │  (live-btc, live-sol,   │        │  (trade-btc, trade-sol, │
 │   live-eth)             │        │   trade-eth)           │
 └──────────────┬──────────┘        └──────────────┬──────────┘
                │                                  │
-               │          ┌───────────────────────┘
+               │          ┌──────────────────────┘
                │          │
                ▼          ▼
 ┌──────────────────────────────┐  ┌──────────────────────────────┐
 │          Engine               │  │       HTTP Server            │
-│   - Order Management          │  │   - Data Aggregation         │
-│   - P&L Calculation           │  │   - REST API                 │
-│   - WebSocket Broadcasting    │  │   - PostgreSQL Storage       │
+│   (Port 5002 - WebSocket)     │  │   (Port 5001 - REST API)    │
+│  - Order Management           │  │  - Data Aggregation         │
+│  - P&L Calculation           │  │  - PostgreSQL Storage       │
+│  - Real-time Broadcasting    │  │  - 1s Candle Builder        │
 └──────────────┬───────────────┘  └──────────────┬───────────────┘
                │                                  │
                │          ┌──────────────────────┘
@@ -72,6 +74,7 @@ cd front_end && npm run dev       # Port 3000
 ┌─────────────────────────────────────────────────────────────┐
 │                        Frontend                              │
 │              (Next.js + Lightweight Charts)                  │
+│              (Port 3000)                                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -99,80 +102,109 @@ Trading_Hub/
 ├── front_end/              # Next.js frontend (Port 3000)
 │   ├── app/               # App router pages
 │   ├── components/         # React components
-│   │   ├── Charts/        # Trading chart component
+│   │   ├── Charts/        # Trading chart
 │   │   ├── DashboardPage/ # Main dashboard
-│   │   ├── OrdersPage/    # Open positions table
+│   │   ├── OrdersPage/    # Positions table
 │   │   ├── TradingPanel/  # Trading interface
-│   │   └── TradingComponent/ # Buy/Sell component
-│   └── lib/               # Redux store, API calls
+│   │   └── TradingComponent/ # Buy/Sell
+│   └── lib/               # Redux, API calls
 │
-├── http_server/           # REST API server (Port 5001)
+├── http_server/           # REST API (Port 5001)
 │   ├── src/
 │   │   ├── lib/
-│   │   │   ├── poller.ts       # 1-min candle storage
-│   │   │   ├── poller_1sec.ts  # 1-sec candle aggregation
-│   │   │   └── prisma.ts       # Database client
+│   │   │   ├── poller.ts       # 1-min storage
+│   │   │   ├── poller_1sec.ts  # 1-sec aggregation
+│   │   │   └── prisma.ts       # DB client
 │   │   └── routes/
 │   │       ├── trade.ts        # Trading endpoints
 │   │       └── users.ts        # Auth endpoints
-│   └── prisma/
-│       └── schema.prisma       # Database schema
+│   └── prisma/schema.prisma
 │
 ├── price_poller/         # Data collector (Port 5000)
-│   └── index.ts          # Binance WebSocket → Redis
+│   └── index.ts          # Binance → Redis
 │
 ├── engine/               # Trading engine (Port 5002)
-│   └── index.ts         # Order management, P&L, WebSocket
+│   └── index.ts         # Orders, P&L, WebSocket
 │
 ├── start.sh             # Service startup script
-└── TECHNICAL_DOCUMENTATION.md  # Detailed technical docs
+├── README.md            # This file
+└── TECHNICAL_DOCUMENTATION.md  # Detailed docs
 ```
 
 ---
 
-## API Endpoints
+## How It Works
+
+### Real-time Data Flow
+
+**1-Minute Candles:**
+```
+Binance Kline Stream → Price Poller → Redis → Engine → WebSocket → Frontend → Chart
+```
+
+**1-Second Candles:**
+```
+Binance Trade Stream → Price Poller → Redis → Engine → WebSocket → Frontend
+                                                              ↓
+                                                    Aggregate trades
+                                                              ↓
+                                                          Chart Update
+```
+
+### Order Flow
+```
+User clicks "Buy" → HTTP Server → Redis Queue → Engine
+                                                    ↓
+                                        Update positions, calculate P&L
+                                                    ↓
+                                        Broadcast via WebSocket
+                                                    ↓
+                                        Frontend updates UI
+```
+
+---
+
+## API Reference
 
 ### Trading
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/trade/open` | POST | Open a new position |
-| `/api/v1/trade/close` | POST | Close an existing position |
+| `/api/v1/trade/open` | POST | Open position |
+| `/api/v1/trade/close` | POST | Close position |
 
 ### Market Data
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/trade/btc-klines` | GET | Get BTC candles |
-| `/api/v1/trade/sol-klines` | GET | Get SOL candles |
-| `/api/v1/trade/eth-klines` | GET | Get ETH candles |
+| `/api/v1/trade/btc-klines` | GET | BTC candles |
+| `/api/v1/trade/sol-klines` | GET | SOL candles |
+| `/api/v1/trade/eth-klines` | GET | ETH candles |
 
-**Query Parameters**:
-- `duration=1s` - Get 1-second candles
-- `duration=1m` - Get 1-minute candles (default)
+**Query**: Add `?duration=1s` for 1-second candles
 
 ### Authentication
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/users/signup` | POST | User registration |
-| `/api/v1/users/login` | POST | User login |
+| `/api/v1/users/signup` | POST | Register |
+| `/api/v1/users/login` | POST | Login |
 
 ---
 
 ## WebSocket Events
 
-**Engine WebSocket**: `ws://localhost:5002`
+**Endpoint**: `ws://localhost:5002`
 
-### Server → Client Events
+### Server → Client
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `BTC_LIVE` | `{ time, open, high, low, close }` | BTC 1-min candle update |
-| `BTC_TRADE` | `{ price, quantity, timestamp }` | Individual BTC trade |
-| `SOL_LIVE` | `{ time, open, high, low, close }` | SOL 1-min candle update |
-| `SOL_TRADE` | `{ price, quantity, timestamp }` | Individual SOL trade |
-| `ETH_LIVE` | `{ time, open, high, low, close }` | ETH 1-min candle update |
-| `ETH_TRADE` | `{ price, quantity, timestamp }` | Individual ETH trade |
-| `open-orders` | Full order object | New order created |
-| `close-orders` | Full order object | Order closed |
+| Event | Data | Description |
+|-------|------|-------------|
+| `BTC_LIVE` | `{ time, open, high, low, close }` | BTC 1m update |
+| `BTC_TRADE` | `{ price, quantity, timestamp }` | BTC trade |
+| `SOL_LIVE` | `{ time, open, high, low, close }` | SOL 1m update |
+| `SOL_TRADE` | `{ price, quantity, timestamp }` | SOL trade |
+| `ETH_LIVE` | `{ time, open, high, low, close }` | ETH 1m update |
+| `ETH_TRADE` | `{ price, quantity, timestamp }` | ETH trade |
+| `open-orders` | Order object | New order |
+| `close-orders` | Order object | Closed order |
 | `positions-update` | `{ id, currentPnl, positionValue }` | P&L update |
 
 ---
@@ -184,7 +216,7 @@ Trading_Hub/
 Btc_1_min, Sol_1_min, Eth_1_min  # 1-minute candles
 Btc_1_sec, Sol_1_sec, Eth_1_sec  # 1-second candles
 
-Columns: id, time (Unix timestamp), open, high, low, close
+Columns: id, time (Unix), open, high, low, close
 ```
 
 ### User Table
@@ -194,40 +226,38 @@ User: id, username, password, token, userBalance
 
 ---
 
-## Key Technical Decisions
+## Key Features Explained
 
-### Redis Streams vs Pub/Sub
+### Real-time P&L
+Uses JavaScript Proxy pattern to auto-update P&L when prices change:
+```typescript
+const priceHandler = {
+  set(target, prop, value) {
+    target[prop] = value;
+    updatePosition(); // Recalculate all open orders
+    return true;
+  }
+};
+```
 
-**Why Redis Streams?**
-- Message persistence (data survives restart)
+### Redis Streams
+- Message persistence (survives restarts)
 - Message replay capability
-- Consumer group support for scaling
+- Efficient XREAD with BLOCK for real-time
 
-**Trade-off**: Slightly more complex than Pub/Sub, but necessary for reliability.
-
-### 1-Second Candle Aggregation
-
-Binance doesn't provide 1-second kline API, so we:
-1. Subscribe to individual trade stream (`@trade`)
-2. Aggregate trades client-side for real-time charts
-3. Aggregate server-side for historical storage
-
-### Microservices Separation
-
-| Service | Responsibility |
-|---------|---------------|
-| Price Poller | Data ingestion only |
-| Engine | Real-time operations (orders, P&L) |
-| HTTP Server | REST API, data storage |
-| Frontend | UI, chart rendering |
+### Trade Filtering
+Old trades filtered by timestamp to prevent stale data:
+```typescript
+if (now - tickTime > 10) return; // Skip trades >10s old
+```
 
 ---
 
 ## Environment Setup
 
-### Required Services
-- PostgreSQL (or use Docker)
-- Redis (or use Docker)
+### Required
+- PostgreSQL
+- Redis
 
 ### Environment Variables
 
@@ -243,85 +273,42 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
 NEXT_PUBLIC_ENGINE_URL=ws://localhost:5002
 ```
 
-**price_poller/.env**
-```env
-REDIS_URL=redis://localhost:6379
-PORT=5000
-```
-
-**engine/.env**
-```env
-REDIS_URL=redis://localhost:6379
-PORT=5002
-```
-
 ---
 
 ## Docker Setup
 
 ```bash
-# Start PostgreSQL
-docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword --name exness_clone postgres
+# PostgreSQL
+docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword \
+  --name exness_clone postgres
 
-# Start Redis
+# Redis
 docker run -d -p 6379:6379 --name my-redis redis
 
 # Setup database
-cd http_server
-npx prisma db push
+cd http_server && npx prisma db push
 ```
 
 ---
 
-## Development
+## For Interview Preparation
 
-```bash
-# Install dependencies for each service
-cd front_end && npm install
-cd http_server && npm install
-cd price_poller && npm install
-cd engine && npm install
+See [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md) for:
 
-# Run in development mode
-./start.sh
+- Detailed architecture diagrams
+- Data flow explanations
+- Technical decisions and trade-offs
+- P&L calculation logic
+- Challenges solved
+- Scalability considerations
 
-# Or individually
-cd price_poller && npm run dev
-cd http_server && npm run dev
-cd engine && npm run dev
-cd front_end && npm run dev
-```
+### Key Talking Points
 
----
-
-## Technical Documentation
-
-For detailed architecture, data flow diagrams, and interview talking points, see:
-- [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)
-
----
-
-## Interview Highlights
-
-### Scalability
-- Stateless services that can scale horizontally
-- Redis Streams handle high-throughput message passing
-- Independent scaling of real-time vs REST operations
-
-### Real-Time Architecture
-- WebSocket for bidirectional, low-latency communication
-- Redis Streams for reliable message delivery with replay capability
-- Efficient batching with `XREAD COUNT + BLOCK`
-
-### Data Integrity
-- Async order processing with callback queues
-- Real-time P&L calculation using JavaScript Proxy pattern
-- PostgreSQL for persistent, ACID-compliant storage
-
-### Challenges Solved
-1. **High-frequency updates**: Efficient batching with Redis XREAD
-2. **Connection resilience**: Auto-reconnect with message replay
-3. **Data aggregation**: Client + server-side 1-second candle building
+1. **Redis Streams over Pub/Sub** - Why message replay matters
+2. **1-second candle aggregation** - Solving Binance API limitation
+3. **Proxy pattern for P&L** - Clean reactive updates
+4. **Microservices separation** - Scalability and fault isolation
+5. **WebSocket + Streams** - Reliable real-time updates
 
 ---
 
