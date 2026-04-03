@@ -6,6 +6,12 @@ export class RedisSubscriber {
   private callbacks: Record<string, (value: unknown) => void>;
 
   constructor() {
+    if (!process.env.REDIS_URL) {
+      console.log("REDIS_URL not set, skipping Redis connection");
+      this.client = null as any;
+      this.callbacks = {};
+      return;
+    }
     this.client = createClient({ url: process.env.REDIS_URL! });
     this.client.connect();
     this.runLoop();
@@ -13,6 +19,7 @@ export class RedisSubscriber {
   }
 
   async runLoop() {
+    if (!this.client) return;
     while (1) {
       const response = await this.client.xRead(
         {

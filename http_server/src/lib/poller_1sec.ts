@@ -1,9 +1,12 @@
 import { prisma } from "../lib/prisma.js";
 import { createClient } from "redis";
 
-const redis = createClient({ url: process.env.REDIS_URL! });
+let redis: any = null;
 
-await redis.connect();
+if (process.env.REDIS_URL) {
+  redis = createClient({ url: process.env.REDIS_URL! });
+  await redis.connect();
+}
 
 interface CandleState {
   time: number;
@@ -81,6 +84,10 @@ async function processTrade(symbol: string, candleState: CandleState, tableName:
 }
 
 export async function start1SecPoller() {
+  if (!redis) {
+    console.log("REDIS_URL not set, skipping 1s poller");
+    return;
+  }
   console.log("[1s Poller] Starting 1-second candle poller...");
   
   Promise.all([

@@ -19,7 +19,6 @@ interface chartData {
 
 export const ChartComponent = (props: {
   data: chartData[];
-  timeframe?: "1m" | "1s";
   colors?: {
     backgroundColor?: string;
     lineColor?: string;
@@ -30,14 +29,13 @@ export const ChartComponent = (props: {
 }) => {
   const {
     data,
-    timeframe = "1m",
     colors: { backgroundColor = "white", textColor = "black" } = {},
   } = props;
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const lastCandleTimeRef = useRef<Time | null>(null);
+  const lastDataHashRef = useRef<string>("");
   const windowWidth = typeof window !== "undefined" ? window.innerWidth : 800;
 
   useEffect(() => {
@@ -60,17 +58,9 @@ export const ChartComponent = (props: {
       height: 600,
       timeScale: {
         timeVisible: true,
-        secondsVisible: timeframe === "1s",
+        secondsVisible: false,
         tickMarkFormatter: (time: number) => {
           const date = new Date(time * 1000);
-          if (timeframe === "1s") {
-            return date.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            });
-          }
           return date.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
@@ -98,7 +88,6 @@ export const ChartComponent = (props: {
 
     chartRef.current = chart;
     seriesRef.current = series;
-    lastCandleTimeRef.current = null;
 
     window.addEventListener("resize", handleResize);
 
@@ -107,61 +96,46 @@ export const ChartComponent = (props: {
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
-      lastCandleTimeRef.current = null;
     };
-  }, [timeframe]);
+  }, []);
 
   useEffect(() => {
-    console.log("[Chart] useEffect triggered, data length:", data.length, "seriesRef:", !!seriesRef.current);
-    
-    if (!seriesRef.current) {
-      console.log("[Chart] seriesRef.current is null!");
-      return;
-    }
-    
-    if (data.length === 0) {
-      console.log("[Chart] data is empty");
-      return;
-    }
+    if (!seriesRef.current || data.length === 0) return;
 
     const sortedData = [...data]
       .sort((a, b) => Number(a.time) - Number(b.time))
       .filter(
-        (item, index, arr) =>
-          index === 0 || arr[index - 1].time !== item.time,
+        (item, index, arr) => index === 0 || arr[index - 1].time !== item.time,
       );
 
-    const lastCandle = sortedData[sortedData.length - 1];
-    const lastCandleTime = Number(lastCandle.time);
-    const currentSeriesData = seriesRef.current.data();
-    console.log("[Chart] current series data length:", currentSeriesData.length, "lastCandleTime:", lastCandleTime);
+    const firstTime = Number(sortedData[0]?.time) || 0;
+    const dataHash = `${firstTime}-${sortedData.length}`;
     
-    if (currentSeriesData.length === 0) {
-      console.log("[Chart] setData called");
+    if (dataHash === lastDataHashRef.current) {
+      const lastCandle = sortedData[sortedData.length - 1];
+      const lastCandleTime = Number(lastCandle.time);
+      const currentSeriesData = seriesRef.current.data();
+      
+      if (currentSeriesData.length > 0) {
+        const lastSeriesCandle = currentSeriesData[currentSeriesData.length - 1];
+        const lastSeriesTime = Number(lastSeriesCandle.time);
+        
+        if (lastCandleTime > lastSeriesTime) {
+          seriesRef.current.update(lastCandle);
+        } else if (lastCandleTime === lastSeriesTime) {
+          seriesRef.current.update(lastCandle);
+        }
+      }
+    } else {
       seriesRef.current.setData(sortedData);
       chartRef.current?.timeScale().fitContent();
-      lastCandleTimeRef.current = lastCandleTime;
-    } else {
-      const lastSeriesCandle = currentSeriesData[currentSeriesData.length - 1];
-      const lastSeriesTime = Number(lastSeriesCandle.time);
-      console.log("[Chart] lastSeriesTime:", lastSeriesTime);
-      
-      if (lastCandleTime > lastSeriesTime) {
-        console.log("[Chart] update - new candle");
-        seriesRef.current.update(lastCandle);
-        lastCandleTimeRef.current = lastCandleTime;
-      } else if (lastCandleTime === lastSeriesTime) {
-        console.log("[Chart] update - same candle");
-        seriesRef.current.update(lastCandle);
-      } else {
-        console.log("[Chart] Skipping - candle is older");
-      }
+      lastDataHashRef.current = dataHash;
     }
   }, [data]);
 
   return <div ref={chartContainerRef} />;
 };
 
-export function Chart(props: { data: chartData[]; timeframe?: "1m" | "1s" }) {
-  return <ChartComponent data={props.data} timeframe={props.timeframe} />;
+export function Chart(props: { data: chartData[] }) {
+  return <ChartComponent data={props.data} />;
 }

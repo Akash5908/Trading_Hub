@@ -4,10 +4,21 @@ import { error } from "console";
 import { createClient } from "redis";
 import { RedisSubscriber } from "../lib/redisSubscriber.js";
 
+let client: any = null;
+let redisSusbcriber: any = null;
+
+if (process.env.REDIS_URL) {
+  client = createClient({ url: process.env.REDIS_URL! });
+  await client.connect();
+  redisSusbcriber = new RedisSubscriber();
+} else {
+  console.log("REDIS_URL not set, trade features disabled");
+}
+
 interface OpenOrder {
   id: string;
   asset: "BTC" | "SOL" | "ETH";
-  side: "buy" | "sell"; // long/short,
+  side: "buy" | "sell";
   kind?: string;
   qty: number;
   entryPrice: number;
@@ -15,14 +26,15 @@ interface OpenOrder {
   userName: string;
   currentPnl?: number;
 }
-const client = createClient({ url: process.env.REDIS_URL! });
-const redisSusbcriber = new RedisSubscriber();
-client.connect();
+
 const router = express.Router();
 export const CREATE_ORDER_QUEUE = "trade-stream";
 export const COMPLETED_ORDER_QUEUE = "trade-stream";
 
 router.post("/open", async (req, res) => {
+  if (!client || !redisSusbcriber) {
+    return res.status(503).send({ message: "Trade service unavailable (Redis not configured)" });
+  }
   const { asset, side, qty, entryPrice, userName } = req.body;
   const id = Math.random().toString();
 
@@ -55,6 +67,9 @@ router.post("/open", async (req, res) => {
 });
 
 router.post("/close", async (req, res) => {
+  if (!client || !redisSusbcriber) {
+    return res.status(503).send({ message: "Trade service unavailable (Redis not configured)" });
+  }
   const { id } = req.body;
 
   //Add the new order in queue

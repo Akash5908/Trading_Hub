@@ -1,9 +1,12 @@
 import { prisma } from "../lib/prisma.js";
 import { createClient } from "redis";
 
-const redis = createClient({ url: process.env.REDIS_URL! });
+let redis: any = null;
 
-await redis.connect();
+if (process.env.REDIS_URL) {
+  redis = createClient({ url: process.env.REDIS_URL! });
+  await redis.connect();
+}
 
 interface trade {
   open: number;
@@ -16,7 +19,7 @@ interface trade {
 // Func to correctly format the data before storing
 const validData = (data: any) => {
   try {
-    let parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+    let parsedData = typeof data === "string" ? JSON.parse(data) : data;
 
     if (parsedData.x === true) {
       return {
@@ -71,7 +74,11 @@ const StoreEth1m = async (data: trade) => {
 };
 
 const StoreTrade = () => {
-  redis.SUBSCRIBE("BTC_KLINES", (data) => {
+  if (!redis) {
+    console.log("REDIS_URL not set, skipping Redis subscription");
+    return;
+  }
+  redis.SUBSCRIBE("BTC_KLINES", (data: any) => {
     const trade = validData(data);
     if (trade) {
       StoreBtc1m(trade).catch((err) => {
@@ -80,7 +87,7 @@ const StoreTrade = () => {
     }
   });
 
-  redis.SUBSCRIBE("SOL_KLINES", (data) => {
+  redis.SUBSCRIBE("SOL_KLINES", (data: any) => {
     const trade = validData(data);
     if (trade) {
       StoreSol1m(trade).catch((err) => {
@@ -89,7 +96,7 @@ const StoreTrade = () => {
     }
   });
 
-  redis.SUBSCRIBE("ETH_KLINES", (data) => {
+  redis.SUBSCRIBE("ETH_KLINES", (data: any) => {
     const trade = validData(data);
     if (trade) {
       StoreEth1m(trade).catch((err) => {

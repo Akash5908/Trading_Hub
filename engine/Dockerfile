@@ -2,7 +2,7 @@
 FROM node:18-alpine
 
 # Set working directory
-WORKDIR /app
+WORKDIR /
 
 # Copy package files
 COPY package*.json ./
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Expose port
-EXPOSE 5001
+EXPOSE 5002
 
 # Start application
 CMD ["npm", "start"]

@@ -1,24 +1,17 @@
-# Use Node.js LTS
 FROM node:18-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+RUN npm install
 
-# Copy source code
 COPY . .
 
-# Build TypeScript
-RUN npm install
+RUN npx prisma generate
+
 RUN npm run build
 
-# Expose port
-EXPOSE 5000
+EXPOSE 5001
 
-# Start application
 CMD ["npm", "start"]

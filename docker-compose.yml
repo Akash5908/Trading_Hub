@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: trading_hub_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: trading_hub_redis
+    ports:
+      - "6379:6379"
+
+  http_server:
+    build:
+      context: ./http_server
+      dockerfile: Dockerfile
+    command: sh -c "npx prisma migrate deploy && npm start"
+    container_name: trading_hub_server
+    environment:
+      DATABASE_URL: "postgresql://postgres:mysecretpassword@postgres:5432/postgres?schema=public"
+      REDIS_URL: "redis://redis:6379"
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: trading_hub_engine
+    ports:
+      - "5002:5002"
+
+  price_poller:
+    build:
+      context: ./price_poller
+      dockerfile: Dockerfile
+    environment:
+      REDIS_URL: "redis://redis:6379"
+    container_name: trading_hub_poller
+    ports:
+      - "5003:5003"
+
+  frontend:
+    build:
+      context: ./front_end
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: "http://localhost:5001/api/v1"
+      NEXT_PUBLIC_ENGINE_URL: "ws://localhost:5002"
+    container_name: trading_hub_frontend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
