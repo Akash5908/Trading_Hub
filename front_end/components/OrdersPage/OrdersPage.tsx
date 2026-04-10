@@ -43,10 +43,14 @@ const OrdersPage = () => {
 
     if (ws.current) {
       ws.current.onmessage = (event: MessageEvent) => {
+        console.log("order", JSON.stringify(event));
         try {
-          const { type, order } = JSON.parse(event?.data);
+          const data = JSON.parse(event?.data);
+          const type = data.type;
+          const order = data.data;
 
           if (type === "open-orders") {
+            console.log("Open-order", JSON.parse(event.data));
             setOpenOrders((prevData) => {
               if (prevData.some((o) => o.id === order.id)) return prevData;
               return [...prevData, order];
@@ -54,7 +58,7 @@ const OrdersPage = () => {
           }
           if (type === "close-orders") {
             setOpenOrders((prevData) =>
-              prevData.filter((o) => o.id !== order.id)
+              prevData.filter((o) => o.id !== order.id),
             );
           }
 
@@ -69,7 +73,7 @@ const OrdersPage = () => {
                       currentPnl: order.currentPnl,
                       positionValue: order.positionValue,
                     }
-                  : o
+                  : o,
               );
             });
           }

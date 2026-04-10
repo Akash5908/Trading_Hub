@@ -85,6 +85,7 @@ const DashboardPage = () => {
           low: Number(item.low),
           close: Number(item.close),
         }));
+        // console.log("Formated data", formattedData);
         setChartData(formattedData);
       } else {
         setChartData([]);
@@ -118,7 +119,7 @@ const DashboardPage = () => {
         try {
           const message = JSON.parse(event.data);
           const currentCurrency = currencyRef.current;
-
+          // console.log(message);
           const currencyMap: Record<string, string> = {
             BTC_LIVE: "BTCUSDT",
             SOL_LIVE: "SOLUSDT",
@@ -178,7 +179,11 @@ const DashboardPage = () => {
       };
 
       socket.onerror = (event) => {
-        console.error("WebSocket error:", event.type, (event.target as WebSocket)?.readyState);
+        console.error(
+          "WebSocket error:",
+          event.type,
+          (event.target as WebSocket)?.readyState,
+        );
       };
 
       ws.current = socket;
@@ -193,6 +198,7 @@ const DashboardPage = () => {
     };
   }, []);
 
+  // console.log("ChartData", chartData);
   async function HandleTrades() {
     const res = await axios.post(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,

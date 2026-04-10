@@ -5,7 +5,10 @@ import { WebSocketServer, WebSocket } from "ws";
 const app = express();
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept",
+  );
   next();
 });
 app.get("/health", (req, res) => {
@@ -57,10 +60,11 @@ function broadcastToAll(type: string, data: any) {
       sentCount++;
     }
   });
-  console.log(`Broadcast ${type} to ${sentCount} clients`);
+  // console.log(`Broadcast ${type} to ${sentCount} clients`);
 }
 
 function broadcastOpenOrder(order: OpenOrder) {
+  console.log("Broadcasting open order", order);
   broadcastToAll("open-orders", order);
 }
 
@@ -129,7 +133,7 @@ async function startLivePriceReader() {
       if (btcLive?.[0]?.messages?.length) {
         const msgs = btcLive[0].messages;
         btcLastId = msgs[msgs.length - 1].id;
-        console.log("BTC live data received:", msgs.length, "messages");
+        // console.log("BTC live data received:", msgs.length, "messages");
         const msg = msgs[msgs.length - 1].message;
         const data = {
           time: Number(msg.time),
@@ -146,7 +150,7 @@ async function startLivePriceReader() {
       if (solLive?.[0]?.messages?.length) {
         const msgs = solLive[0].messages;
         solLastId = msgs[msgs.length - 1].id;
-        console.log("SOL live data received:", msgs.length, "messages");
+        // console.log("SOL live data received:", msgs.length, "messages");
         const msg = msgs[msgs.length - 1].message;
         const data = {
           time: Number(msg.time),
@@ -163,7 +167,7 @@ async function startLivePriceReader() {
       if (ethLive?.[0]?.messages?.length) {
         const msgs = ethLive[0].messages;
         ethLastId = msgs[msgs.length - 1].id;
-        console.log("ETH live data received:", msgs.length, "messages");
+        // console.log("ETH live data received:", msgs.length, "messages");
         const msg = msgs[msgs.length - 1].message;
         const data = {
           time: Number(msg.time),
@@ -207,11 +211,18 @@ async function startTradeReader() {
         ),
       ]);
 
-      console.log("Trade reader tick - BTC:", btcTrade, "SOL:", solTrade, "ETH:", ethTrade);
+      // console.log(
+      //   "Trade reader tick - BTC:",
+      //   JSON.stringify(btcTrade),
+      //   "SOL:",
+      //   JSON.stringify(solTrade),
+      //   "ETH:",
+      //   JSON.stringify(ethTrade),
+      // );
 
       if (btcTrade?.[0]?.messages?.length) {
         const msgs = btcTrade[0].messages;
-        console.log("BTC trade received:", msgs.length, "messages");
+        // console.log("BTC trade received:", msgs.length, "messages");
         btcLastId = msgs[msgs.length - 1].id;
         const msg = msgs[msgs.length - 1].message;
         broadcastToAll("BTC_TRADE", {
@@ -280,7 +291,7 @@ async function startOrderProcessor() {
           userName: trade.userName,
           qty: trade.qty,
         });
-
+        console.log("Adding trade to callback queue");
         await redis.xAdd("callback-queue", "*", {
           message: JSON.stringify({ id, asset, qty }),
         });

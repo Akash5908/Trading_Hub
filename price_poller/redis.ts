@@ -1,7 +1,7 @@
 export const assetArray = {
-  btc: "BTC_TRADE",
-  sol: "SOL_TRADE",
-  eth: "ETH_TRADE",
+  btc: "BTC_KLINES",
+  sol: "SOL_KLINES",
+  eth: "ETH_KLINES",
 };
 
 // func to create a redis server and use pub/sub
@@ -12,11 +12,31 @@ export async function pushToRedis(
 ) {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   const channel = assetArray[asset];
-  console.log(`[PRICE_POLLER] Publishing to Redis channel: ${channel}`, {
-    time: trades.k?.t,
+  const klinesTrade = {
+    time: String(Math.floor(trades.k.t / 1000)),
     open: trades.k?.o,
+    high: trades.k.h,
     close: trades.k?.c,
-  });
-  redis.publish(channel, JSON.stringify(trades));
-  console.log(`[PRICE_POLLER] Successfully published ${asset} data to Redis`);
+    quantity: trades.k.q,
+    low: trades.k.l,
+    x: trades.k.x,
+  };
+
+  console.log(
+    `[PRICE_POLLER] Publishing to Redis channel: ${channel}`,
+    klinesTrade,
+  );
+  redis
+    .publish(channel, JSON.stringify(klinesTrade))
+    .then(() =>
+      console.log(
+        `[PRICE_POLLER] Successfully published ${asset} data to Redis ✅`,
+      ),
+    )
+    .catch((err: any) =>
+      console.error(
+        `[PRICE_POLLER] Failed to publish ${asset} data to redis ❌`,
+        err,
+      ),
+    );
 }

@@ -1,0 +1,35 @@
+-- CreateTable
+CREATE TABLE "Btc_1_sec" (
+    "id" SERIAL NOT NULL,
+    "time" DOUBLE PRECISION NOT NULL,
+    "open" DOUBLE PRECISION NOT NULL,
+    "high" DOUBLE PRECISION NOT NULL,
+    "low" DOUBLE PRECISION NOT NULL,
+    "close" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "Btc_1_sec_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Sol_1_sec" (
+    "id" SERIAL NOT NULL,
+    "time" DOUBLE PRECISION NOT NULL,
+    "open" DOUBLE PRECISION NOT NULL,
+    "high" DOUBLE PRECISION NOT NULL,
+    "low" DOUBLE PRECISION NOT NULL,
+    "close" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "Sol_1_sec_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Eth_1_sec" (
+    "id" SERIAL NOT NULL,
+    "time" DOUBLE PRECISION NOT NULL,
+    "open" DOUBLE PRECISION NOT NULL,
+    "high" DOUBLE PRECISION NOT NULL,
+    "low" DOUBLE PRECISION NOT NULL,
+    "close" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "Eth_1_sec_pkey" PRIMARY KEY ("id")
+);

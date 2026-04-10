@@ -31,6 +31,11 @@ start_service() {
 
 export REDIS_URL="redis://localhost:6379"
 
+# NEW: Run Prisma migrations for http_server
+echo -e "${GREEN}Running Prisma migrations...${NC}"
+cd "$ROOT_DIR/http_server"
+npx prisma migrate deploy
+
 start_service "HTTP Server" "http_server" "npm run dev"
 start_service "Price Poller" "price_poller" "npm run dev"
 start_service "Engine" "engine" "npm run dev"

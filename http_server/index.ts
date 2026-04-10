@@ -2,10 +2,14 @@ import express from "express";
 import users from "./src/routes/users.js";
 import trade from "./src/routes/trade.js";
 import cors from "cors";
-import StoreTrade from "./src/lib/poller.js";
+import { storeTrade } from "./src/lib/poller.js";
 import { start1SecPoller } from "./src/lib/poller_1sec.js";
+import { createClient } from "redis";
 
 const app = express();
+const redisUrl = process.env.REDIS_URL!;
+
+export const redisClient = createClient({ url: redisUrl });
 
 const port = 5001;
 
@@ -24,6 +28,18 @@ function startServer() {
   });
 }
 
-StoreTrade();
-start1SecPoller();
+async function startRedis() {
+  try {
+    await redisClient.connect();
+    console.log("✅ Successfully connected to redis!");
+    return { success: true };
+  } catch (error) {
+    console.log("❌ Failed to connect to redis server!");
+    return { success: false };
+  }
+}
+
+await startRedis();
+// start1SecPoller();
 startServer();
+await storeTrade();

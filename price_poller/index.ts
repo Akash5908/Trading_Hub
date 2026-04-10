@@ -1,6 +1,7 @@
 import express from "express";
 import { WebSocket } from "ws";
 import { createClient } from "redis";
+import { pushToRedis } from "./redis";
 
 const redis = createClient({ url: process.env.REDIS_URL! });
 const app = express();
@@ -37,7 +38,7 @@ function subscribeToKline(symbol: string, tickerName: string) {
     try {
       const kline = JSON.parse(data);
       const k = kline.k;
-      
+      pushToRedis(redis, kline, tickerName as "btc" | "sol" | "eth");
       if (k.x) {
         await redis.xAdd(`klines-${tickerName.toLowerCase()}`, "*", {
           t: String(k.t),
@@ -66,15 +67,15 @@ function subscribeToKline(symbol: string, tickerName: string) {
   });
 
   ws.on("close", () => {
-    console.warn(`🔄 Kline connection closed for ${tickerName}. Reconnecting in 5s...`);
+    console.warn(
+      `🔄 Kline connection closed for ${tickerName}. Reconnecting in 5s...`,
+    );
     setTimeout(() => subscribeToKline(symbol, tickerName), 5000);
   });
 }
 
 function subscribeToTrade(symbol: string, tickerName: string) {
-  const ws = new WebSocket(
-    `wss://stream.binance.com:9443/ws/${symbol}@trade`,
-  );
+  const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
 
   ws.on("open", () => {
     console.log(`📡 Connected to ${tickerName} trade stream (binance.com)`);
@@ -98,7 +99,9 @@ function subscribeToTrade(symbol: string, tickerName: string) {
   });
 
   ws.on("close", () => {
-    console.warn(`🔄 Trade connection closed for ${tickerName}. Reconnecting in 5s...`);
+    console.warn(
+      `🔄 Trade connection closed for ${tickerName}. Reconnecting in 5s...`,
+    );
     setTimeout(() => subscribeToTrade(symbol, tickerName), 5000);
   });
 }
@@ -109,6 +112,6 @@ subscribeToKline("btcusdt", "btc");
 subscribeToKline("solusdt", "sol");
 subscribeToKline("ethusdt", "eth");
 
-subscribeToTrade("btcusdt", "btc");
-subscribeToTrade("solusdt", "sol");
-subscribeToTrade("ethusdt", "eth");
+// subscribeToTrade("btcusdt", "btc");
+// subscribeToTrade("solusdt", "sol");
+// subscribeToTrade("ethusdt", "eth");
