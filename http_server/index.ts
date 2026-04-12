@@ -5,6 +5,7 @@ import cors from "cors";
 import { storeTrade } from "./src/lib/poller.js";
 import { start1SecPoller } from "./src/lib/poller_1sec.js";
 import { createClient } from "redis";
+import { initWebSocket } from "./src/lib/websocket.js";
 
 const app = express();
 const redisUrl = process.env.REDIS_URL!;
@@ -40,6 +41,7 @@ async function startRedis() {
 }
 
 await startRedis();
+initWebSocket(); //Starting websocket connection
 // start1SecPoller();
-startServer();
+startServer(); //Starting backend server
 await storeTrade();
