@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { redisClient } from "../../index.js";
+import { redisClient } from "./redis.js";
 
 interface trade {
   open: number;

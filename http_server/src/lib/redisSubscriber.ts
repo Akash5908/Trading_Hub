@@ -5,21 +5,28 @@ export class RedisSubscriber {
   private client: RedisClientType;
   private callbacks: Record<string, (value: unknown) => void>;
 
-  constructor() {
+  constructor(client: RedisClientType) {
     if (!process.env.REDIS_URL) {
       console.log("REDIS_URL not set, skipping Redis connection");
       this.client = null as any;
       this.callbacks = {};
       return;
     }
-    this.client = createClient({ url: process.env.REDIS_URL! });
-    this.client.connect();
-    this.runLoop();
+    this.client = client;
     this.callbacks = {};
+    this.init();
   }
 
+  async init() {
+    // Wait for client to be ready
+    while (!this.client.isReady) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    console.log("RedisSubscriber: Client is ready, starting loop");
+    this.runLoop();
+  }
   async runLoop() {
-    if (!this.client) return;
+    if (!this.client) return console.log("CLient not present");
     while (1) {
       const response = await this.client.xRead(
         {

@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "userBalance" INTEGER NOT NULL DEFAULT 5000;

@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,20 +22,29 @@ services:
     container_name: trading_hub_redis
     ports:
       - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   http_server:
     build:
       context: ./http_server
       dockerfile: Dockerfile
-    command: sh -c "npx prisma migrate deploy && npm start"
+    command: sh -c "npx prisma db push --accept-data-loss && npm start"
     container_name: trading_hub_server
     environment:
       DATABASE_URL: "postgresql://postgres:mysecretpassword@postgres:5432/postgres?schema=public"
       REDIS_URL: "redis://redis:6379"
     ports:
       - "5001:5001"
+    restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   engine:
@@ -42,8 +52,14 @@ services:
       context: ./engine
       dockerfile: Dockerfile
     container_name: trading_hub_engine
+    restart: unless-stopped
+    environment:
+      REDIS_URL: "redis://redis:6379"
     ports:
       - "5002:5002"
+    depends_on:
+      redis:
+        condition: service_healthy
 
   price_poller:
     build:
@@ -54,17 +70,25 @@ services:
     container_name: trading_hub_poller
     ports:
       - "5003:5003"
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
 
   frontend:
     build:
       context: ./front_end
       dockerfile: Dockerfile
     environment:
-      NEXT_PUBLIC_BACKEND_URL: "http://localhost:5001/api/v1"
-      NEXT_PUBLIC_ENGINE_URL: "ws://localhost:5002"
+      NEXT_PUBLIC_BACKEND_URL: "http://http_server:5001/api/v1"
+      NEXT_PUBLIC_ENGINE_URL: "ws://engine:5002"
     container_name: trading_hub_frontend
     ports:
       - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - http_server
+      - engine
 
 volumes:
   postgres_data:

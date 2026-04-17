@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Info } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Spinner } from "@/components/ui/spinner";
 
 interface OrderProps {
   fees: number;
@@ -33,6 +35,7 @@ const TradingPanel = ({
   userName: string;
 }) => {
   const [side, setSide] = useState<"buy" | "sell">("buy");
+  const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState<OrderProps>({
     fees: 0,
     leverage: 10,
@@ -103,6 +106,7 @@ const TradingPanel = ({
 
   async function openTrade() {
     try {
+      setLoading(true);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,
         {
@@ -113,7 +117,7 @@ const TradingPanel = ({
           userName,
           // you can also send leverage, margin, etc.
           leverage: orderData.leverage,
-        }
+        },
       );
       if (res.data.status === 201) {
         toast.success("Order placed Successfully!");
@@ -129,7 +133,10 @@ const TradingPanel = ({
         });
       }
     } catch (error) {
+      toast.error("Failed to place Order!");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -144,7 +151,7 @@ const TradingPanel = ({
               "py-2 text-sm font-medium rounded-md transition-all",
               side === "buy"
                 ? "bg-background shadow-sm text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             Buy
@@ -155,7 +162,7 @@ const TradingPanel = ({
               "py-2 text-sm font-medium rounded-md transition-all",
               side === "sell"
                 ? "bg-background shadow-sm text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             Sell
@@ -260,14 +267,15 @@ const TradingPanel = ({
           <div className="pt-4 space-y-2">
             <Button
               className={cn(
-                "w-full py-6 text-base font-bold transition-all shadow-md",
+                "w-full py-6 text-base font-bold transition-all shadow-md cursor-pointer",
                 side === "buy"
                   ? "bg-primary hover:bg-primary/90"
-                  : "bg-destructive hover:bg-destructive/90"
+                  : "bg-destructive hover:bg-destructive/90",
               )}
               onClick={openTrade}
+              disabled={loading}
             >
-              Confirm {side === "buy" ? "Buy" : "Sell"}
+              Confirm {side === "buy" ? "Buy" : "Sell"} {loading && <Spinner />}
             </Button>
             <Button
               variant="ghost"

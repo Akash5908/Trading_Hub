@@ -1,18 +1,16 @@
 import express from "express";
 import { prisma } from "../lib/prisma.js";
 import { error } from "console";
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 import { RedisSubscriber } from "../lib/redisSubscriber.js";
+import { redisSubscriberClient, redisClient } from "../lib/redis.js";
 
-let client: any = null;
-let redisSusbcriber: any = null;
+let redisSubscriber: RedisSubscriber | null = null;
 
-if (process.env.REDIS_URL) {
-  client = createClient({ url: process.env.REDIS_URL! });
-  await client.connect();
-  redisSusbcriber = new RedisSubscriber();
-} else {
-  console.log("REDIS_URL not set, trade features disabled");
+if (redisSubscriberClient !== null) {
+  redisSubscriber = new RedisSubscriber(
+    redisSubscriberClient as RedisClientType,
+  );
 }
 
 interface OpenOrder {
@@ -32,14 +30,16 @@ export const CREATE_ORDER_QUEUE = "trade-stream";
 export const COMPLETED_ORDER_QUEUE = "trade-stream";
 
 router.post("/open", async (req, res) => {
-  if (!client || !redisSusbcriber) {
-    return res.status(503).send({ message: "Trade service unavailable (Redis not configured)" });
+  if (!redisClient || !redisSubscriber) {
+    return res
+      .status(503)
+      .send({ message: "Trade service unavailable (Redis not configured)" });
   }
   const { asset, side, qty, entryPrice, userName } = req.body;
   const id = Math.random().toString();
-
+  console.log("Order came");
   //Add the new order in queue
-  await client.xAdd(CREATE_ORDER_QUEUE, "*", {
+  await redisClient.xAdd(CREATE_ORDER_QUEUE, "*", {
     message: JSON.stringify({
       kind: "create-order",
       asset,
@@ -50,8 +50,9 @@ router.post("/open", async (req, res) => {
       id,
     }),
   });
+  console.log("Added order in callback queue!!");
   try {
-    const responseFromEngine = (await redisSusbcriber.waitForMessage(id)) as {
+    const responseFromEngine = (await redisSubscriber.waitForMessage(id)) as {
       order: OpenOrder;
     };
     console.log("Response from Engine", responseFromEngine);
@@ -62,25 +63,27 @@ router.post("/open", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.send(error);
+    res.status(500).json({ message: error });
   }
 });
 
 router.post("/close", async (req, res) => {
-  if (!client || !redisSusbcriber) {
-    return res.status(503).send({ message: "Trade service unavailable (Redis not configured)" });
+  if (!redisClient || !redisSubscriber) {
+    return res
+      .status(503)
+      .send({ message: "Trade service unavailable (Redis not configured)" });
   }
   const { id } = req.body;
 
   //Add the new order in queue
-  await client.xAdd(COMPLETED_ORDER_QUEUE, "*", {
+  await redisClient.xAdd(COMPLETED_ORDER_QUEUE, "*", {
     message: JSON.stringify({
       kind: "close-order",
       id,
     }),
   });
   try {
-    const responseFromEngine = (await redisSusbcriber.waitForMessage(id)) as {
+    const responseFromEngine = (await redisSubscriber.waitForMessage(id)) as {
       order: OpenOrder;
     };
     console.log("Response from Engine", responseFromEngine);
@@ -110,13 +113,7 @@ router.post("/close", async (req, res) => {
 router.get("/btc-klines", async (req, res) => {
   const { duration } = req.query;
   try {
-    if (duration === "1s") {
-      const data = await prisma.btc_1_sec.findMany({
-        orderBy: { time: "desc" },
-        take: 300,
-      });
-      return res.status(201).json(data.reverse());
-    } else {
+    if (duration === "1m") {
       const data = await prisma.btc_1_min.findMany();
       return res.status(201).json(data);
     }
@@ -128,13 +125,7 @@ router.get("/btc-klines", async (req, res) => {
 router.get("/sol-klines", async (req, res) => {
   const { duration } = req.query;
   try {
-    if (duration === "1s") {
-      const data = await prisma.sol_1_sec.findMany({
-        orderBy: { time: "desc" },
-        take: 300,
-      });
-      return res.status(201).json(data.reverse());
-    } else {
+    if (duration === "1m") {
       const data = await prisma.sol_1_min.findMany();
       return res.status(201).json(data);
     }
@@ -146,13 +137,7 @@ router.get("/sol-klines", async (req, res) => {
 router.get("/eth-klines", async (req, res) => {
   const { duration } = req.query;
   try {
-    if (duration === "1s") {
-      const data = await prisma.eth_1_sec.findMany({
-        orderBy: { time: "desc" },
-        take: 300,
-      });
-      return res.status(201).json(data.reverse());
-    } else {
+    if (duration === "1m") {
       const data = await prisma.eth_1_min.findMany();
       return res.status(201).json(data);
     }
