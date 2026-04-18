@@ -28,6 +28,7 @@ export class RedisSubscriber {
   async runLoop() {
     if (!this.client) return console.log("CLient not present");
     while (1) {
+      console.log("Reading call_back queue!!!");
       const response = await this.client.xRead(
         {
           key: CALLBACK_QUEUE,
@@ -60,6 +61,7 @@ export class RedisSubscriber {
 
   // throw an error (reject) if u dont get back a message in 5s
   waitForMessage(callbackId: string) {
+    console.log("waiting for message");
     return new Promise((resolve, reject) => {
       this.callbacks[callbackId] = resolve;
       setTimeout(() => {

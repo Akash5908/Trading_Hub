@@ -1,6 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { redisClient } from "./redis.js";
-
+import { redisSubscriberClient } from "./redis.js";
 interface trade {
   open: number;
   high: number;
@@ -9,6 +8,7 @@ interface trade {
   time: number;
 }
 
+const redisClient = redisSubscriberClient;
 // Func to correctly format the data before storing
 const validData = (data: any) => {
   try {

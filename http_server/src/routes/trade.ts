@@ -8,9 +8,7 @@ import { redisSubscriberClient, redisClient } from "../lib/redis.js";
 let redisSubscriber: RedisSubscriber | null = null;
 
 if (redisSubscriberClient !== null) {
-  redisSubscriber = new RedisSubscriber(
-    redisSubscriberClient as RedisClientType,
-  );
+  redisSubscriber = new RedisSubscriber(redisClient as RedisClientType);
 }
 
 interface OpenOrder {
@@ -39,7 +37,7 @@ router.post("/open", async (req, res) => {
   const id = Math.random().toString();
   console.log("Order came");
   //Add the new order in queue
-  await redisClient.xAdd(CREATE_ORDER_QUEUE, "*", {
+  redisClient.xAdd(CREATE_ORDER_QUEUE, "*", {
     message: JSON.stringify({
       kind: "create-order",
       asset,
