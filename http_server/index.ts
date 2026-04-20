@@ -9,7 +9,10 @@ import { connectRedis } from "./src/lib/redis.js";
 const app = express();
 
 const port = 5001;
-app.use(cors());
+app.use(cors({
+  origin: "https://trading-hub.akashfullstack.site",
+  credentials: true,
+}));
 app.use(express.json());
 
 async function startServer() {

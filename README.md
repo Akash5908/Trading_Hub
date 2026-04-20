@@ -291,6 +291,36 @@ cd http_server && npx prisma db push
 
 ---
 
+## VPS Deployment
+
+### Prerequisites
+- Docker and Docker Compose installed
+- Node.js 18+ and npm installed
+
+### Steps
+
+1. **Start Database Containers (PostgreSQL + Redis)**
+   ```bash
+   docker compose -f /path/to/Trading_Hub/docker-compose.db.yml up -d
+   ```
+
+2. **Run the Application**
+   ```bash
+   cd /path/to/Trading_Hub
+   ./start.sh
+   ```
+
+### Notes
+- The `start.sh` script runs Prisma migrations automatically before starting services
+- Ensure `http_server/.env` has correct `DATABASE_URL` pointing to PostgreSQL container
+- Services will be available at:
+  - Frontend: http://localhost:3000
+  - HTTP Server: http://localhost:5001
+  - Price Poller: http://localhost:5000
+  - Engine: localhost:5002
+
+---
+
 ## For Interview Preparation
 
 See [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md) for:
