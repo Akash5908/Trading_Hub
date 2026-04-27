@@ -52,11 +52,11 @@ const TradingComponent = ({
               tradeId: parsedData.t,
             },
             ...prevData,
-          ].slice(0, 100)
+          ].slice(0, 100),
         );
       };
     };
-  }, [tradeData]);
+  }, []);
 
   return (
     <div className="flex min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

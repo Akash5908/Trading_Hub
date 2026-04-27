@@ -3,7 +3,11 @@ import { prisma } from "../lib/prisma.js";
 import { error } from "console";
 import { createClient, RedisClientType } from "redis";
 import { RedisSubscriber } from "../lib/redisSubscriber.js";
-import { redisSubscriberClient, redisClient } from "../lib/redis.js";
+import {
+  redisSubscriberClient,
+  redisClient,
+  redisCallbackClient,
+} from "../lib/redis.js";
 
 let redisSubscriber: RedisSubscriber | null = null;
 
@@ -37,7 +41,7 @@ router.post("/open", async (req, res) => {
   const id = Math.random().toString();
   console.log("Order came");
   //Add the new order in queue
-  redisClient.xAdd(CREATE_ORDER_QUEUE, "*", {
+  await redisCallbackClient.xAdd(CREATE_ORDER_QUEUE!, "*", {
     message: JSON.stringify({
       kind: "create-order",
       asset,
@@ -66,7 +70,7 @@ router.post("/open", async (req, res) => {
 });
 
 router.post("/close", async (req, res) => {
-  if (!redisClient || !redisSubscriber) {
+  if (!redisCallbackClient || !redisSubscriber) {
     return res
       .status(503)
       .send({ message: "Trade service unavailable (Redis not configured)" });
@@ -74,7 +78,7 @@ router.post("/close", async (req, res) => {
   const { id } = req.body;
 
   //Add the new order in queue
-  await redisClient.xAdd(COMPLETED_ORDER_QUEUE, "*", {
+  await redisCallbackClient.xAdd(COMPLETED_ORDER_QUEUE, "*", {
     message: JSON.stringify({
       kind: "close-order",
       id,

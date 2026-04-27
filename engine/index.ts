@@ -14,8 +14,9 @@ app.use((req, res, next) => {
 app.get("/health", (req, res) => {
   res.json({ status: "ok", clients: clients.size });
 });
-const httpServer = app.listen(5002);
+const httpServer = app.listen(5006);
 const redis = createClient({ url: process.env.REDIS_URL! });
+const redisSubscriberClient = createClient({ url: process.env.REDIS_URL! });
 const clients = new Set<WebSocket>();
 const wss = new WebSocketServer({ server: httpServer });
 
@@ -54,6 +55,7 @@ export function calculatePositionValue(order: OpenOrder): number {
 function broadcastToAll(type: string, data: any) {
   const message = JSON.stringify({ type, data });
   let sentCount = 0;
+  console.log("[Engine]", message);
   clients.forEach((c) => {
     if (c.readyState === WebSocket.OPEN) {
       c.send(message);
@@ -116,15 +118,15 @@ async function startLivePriceReader() {
   while (true) {
     try {
       const [btcLive, solLive, ethLive]: any[] = await Promise.all([
-        redis.xRead(
+        await redisSubscriberClient.xRead(
           { key: "live-btc", id: btcLastId },
           { COUNT: 10, BLOCK: 500 },
         ),
-        redis.xRead(
+        redisSubscriberClient.xRead(
           { key: "live-sol", id: solLastId },
           { COUNT: 10, BLOCK: 500 },
         ),
-        redis.xRead(
+        redisSubscriberClient.xRead(
           { key: "live-eth", id: ethLastId },
           { COUNT: 10, BLOCK: 500 },
         ),
@@ -135,13 +137,16 @@ async function startLivePriceReader() {
         btcLastId = msgs[msgs.length - 1].id;
         // console.log("BTC live data received:", msgs.length, "messages");
         const msg = msgs[msgs.length - 1].message;
+        console.log("[ENGINE - BTC]", JSON.stringify(msg));
         const data = {
           time: Number(msg.time),
           open: parseFloat(msg.open as string),
           high: parseFloat(msg.high as string),
           low: parseFloat(msg.low as string),
           close: parseFloat(msg.close as string),
+          x: msg.x as string,
         };
+
         Prices.BTC = data.close;
         watchedPrices.BTC = data.close;
         broadcastToAll("BTC_LIVE", data);
@@ -158,6 +163,7 @@ async function startLivePriceReader() {
           high: parseFloat(msg.high as string),
           low: parseFloat(msg.low as string),
           close: parseFloat(msg.close as string),
+          x: msg.x,
         };
         Prices.SOL = data.close;
         watchedPrices.SOL = data.close;
@@ -197,15 +203,15 @@ async function startTradeReader() {
   while (true) {
     try {
       const [btcTrade, solTrade, ethTrade]: any[] = await Promise.all([
-        redis.xRead(
+        redisSubscriberClient.xRead(
           { key: "trade-btc", id: btcLastId },
           { COUNT: 10, BLOCK: 2000 },
         ),
-        redis.xRead(
+        redisSubscriberClient.xRead(
           { key: "trade-sol", id: solLastId },
           { COUNT: 10, BLOCK: 2000 },
         ),
-        redis.xRead(
+        redisSubscriberClient.xRead(
           { key: "trade-eth", id: ethLastId },
           { COUNT: 10, BLOCK: 2000 },
         ),
@@ -265,11 +271,11 @@ async function startOrderProcessor() {
 
   while (true) {
     try {
-      const response: any = await redis.xRead(
+      const response: any = await redisSubscriberClient.xRead(
         { key: "trade-stream", id: "$" },
-        { BLOCK: 1000 },
+        { COUNT: 10, BLOCK: 1000 },
       );
-
+      console.log("ENGINE RESPONSE}", JSON.stringify(response));
       if (!response || !Array.isArray(response as any[])) continue;
 
       const firstMessage = response[0];
@@ -295,7 +301,7 @@ async function startOrderProcessor() {
         await redis.xAdd("callback-queue", "*", {
           message: JSON.stringify({ id, asset, qty }),
         });
-
+        console.log("SUccessfully added the trade in callback-queue");
         broadcastOpenOrder(trade);
       } else {
         const closeOrder = openOrders.find((e) => e.id === id);
@@ -330,8 +336,8 @@ async function startOrderProcessor() {
 
 async function start() {
   try {
-    await redis.connect();
-    console.log("Engine Redis connected");
+    await Promise.all([redis.connect(), redisSubscriberClient.connect()]);
+    console.log("✅ Engine Redis connected");
 
     startLivePriceReader();
     startTradeReader();
