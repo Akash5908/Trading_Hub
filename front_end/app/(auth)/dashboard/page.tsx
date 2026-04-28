@@ -1,5 +1,5 @@
 "use client";
-import DashboardPage from "@/components/DashboardPage/DashbaordPage";
+import DashboardPage from "@/components/DashboardPage/DashboardPage";
 import { useAppSelector } from "@/lib/hook";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -16,7 +16,6 @@ const Dashboard = () => {
   return (
     <div>
       <DashboardPage />
-      {/* <TradingComponent /> */}
     </div>
   );
 };

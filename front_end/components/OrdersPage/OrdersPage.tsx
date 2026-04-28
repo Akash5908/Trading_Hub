@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { XCircle, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
+
 interface OpenOrder {
   id: string;
   asset: "BTC" | "SOL" | "ETH";

@@ -11,6 +11,7 @@ import { Info } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
+import z from "zod";
 
 interface OrderProps {
   fees: number;
@@ -22,6 +23,15 @@ interface OrderProps {
   totalPrice: number;
   totalCost: number;
 }
+
+const tradeValidator = z.object({
+  asset: z.enum(["BTC", "ETH", "SOL"]),
+  side: z.enum(["buy", "sell"]),
+  qty: z.number().positive("Quantity must be > 0"),
+  entryPrice: z.number().positive("Entry price must be > 0"),
+  userName: z.string().min(1, "Username is required"),
+  leverage: z.number().min(1).max(2000),
+});
 
 const TradingPanel = ({
   assetPrice,
@@ -105,19 +115,27 @@ const TradingPanel = ({
   ];
 
   async function openTrade() {
+    const tradeData = {
+      asset: selectedCurrency,
+      side,
+      qty: orderData.volume,
+      entryPrice: assetPrice,
+      userName,
+      leverage: orderData.leverage,
+    };
+
+    const { success, data } = tradeValidator.safeParse(tradeData);
+    if (!success) {
+      const errors = tradeValidator.safeParse(tradeData).error?.issues;
+      toast.error(errors?.[0]?.message || "Validation failed");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/trade/open`,
-        {
-          asset: selectedCurrency,
-          side,
-          qty: orderData.volume,
-          entryPrice: assetPrice,
-          userName,
-          // you can also send leverage, margin, etc.
-          leverage: orderData.leverage,
-        },
+        tradeData,
       );
       if (res.data.status === 201) {
         toast.success("Order placed Successfully!");

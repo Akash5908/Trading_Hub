@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { hashPassword } from "../utils/bcrypt.js";
 
 const router = express.Router();
-const privateKey = "asdkjfhasdkjlfhasdkjlfhasklfjhslk";
+const privateKey = process.env.JWT_SECRET!;
 router.post("/sign-up", async (req, res) => {
   const { username, password } = req.body;
   const hashedPassword = hashPassword(password);
