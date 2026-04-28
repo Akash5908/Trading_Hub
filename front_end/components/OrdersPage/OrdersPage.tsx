@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { XCircle, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
-
+import { toast } from "react-hot-toast";
 interface OpenOrder {
   id: string;
   asset: "BTC" | "SOL" | "ETH";
@@ -104,8 +104,10 @@ const OrdersPage = () => {
         id: id,
       });
       setOpenOrders((prev) => prev.filter((order) => order.id !== id));
+      toast.success("Trade Closed Successfully!");
     } catch (error) {
       console.error("[v0] Error closing trade:", error);
+      toast.error("Failed to Close Trade!");
     } finally {
       setIsClosing(null);
     }

@@ -14,7 +14,7 @@ app.use((req, res, next) => {
 app.get("/health", (req, res) => {
   res.json({ status: "ok", clients: clients.size });
 });
-const httpServer = app.listen(5006);
+const httpServer = app.listen(5002);
 const redis = createClient({ url: process.env.REDIS_URL! });
 const redisSubscriberClient = createClient({ url: process.env.REDIS_URL! });
 const clients = new Set<WebSocket>();

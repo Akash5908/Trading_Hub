@@ -5,6 +5,7 @@ A **real-time cryptocurrency trading platform** with live candlestick charts, tr
 ## Features
 
 ### Trading
+
 - **Real-time Charts** - TradingView-style candlestick charts
 - **Multiple Timeframes** - 1-second and 1-minute candle updates
 - **Currency Pairs** - BTC, ETH, SOL against USDT
@@ -13,6 +14,7 @@ A **real-time cryptocurrency trading platform** with live candlestick charts, tr
 - **Position Management** - Track and close open orders
 
 ### Technical
+
 - **WebSocket Real-time Updates** - Live price streaming
 - **Redis Streams** - Message buffering and persistence
 - **PostgreSQL Storage** - Historical candle data
@@ -82,16 +84,16 @@ cd front_end && npm run dev       # Port 3000
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 16, React 19, TypeScript |
-| UI | Tailwind CSS, Shadcn/UI |
-| State | Redux Toolkit |
-| Charts | Lightweight Charts (TradingView) |
-| Backend | Express.js, TypeScript |
-| Database | PostgreSQL + Prisma ORM |
-| Cache/Queue | Redis (Streams) |
-| WebSocket | ws library |
+| Layer       | Technology                       |
+| ----------- | -------------------------------- |
+| Frontend    | Next.js 16, React 19, TypeScript |
+| UI          | Tailwind CSS, Shadcn/UI          |
+| State       | Redux Toolkit                    |
+| Charts      | Lightweight Charts (TradingView) |
+| Backend     | Express.js, TypeScript           |
+| Database    | PostgreSQL + Prisma ORM          |
+| Cache/Queue | Redis (Streams)                  |
+| WebSocket   | ws library                       |
 
 ---
 
@@ -138,11 +140,13 @@ Trading_Hub/
 ### Real-time Data Flow
 
 **1-Minute Candles:**
+
 ```
 Binance Kline Stream → Price Poller → Redis → Engine → WebSocket → Frontend → Chart
 ```
 
 **1-Second Candles:**
+
 ```
 Binance Trade Stream → Price Poller → Redis → Engine → WebSocket → Frontend
                                                               ↓
@@ -152,6 +156,7 @@ Binance Trade Stream → Price Poller → Redis → Engine → WebSocket → Fro
 ```
 
 ### Order Flow
+
 ```
 User clicks "Buy" → HTTP Server → Redis Queue → Engine
                                                     ↓
@@ -167,25 +172,28 @@ User clicks "Buy" → HTTP Server → Redis Queue → Engine
 ## API Reference
 
 ### Trading
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/trade/open` | POST | Open position |
-| `/api/v1/trade/close` | POST | Close position |
+
+| Endpoint              | Method | Description    |
+| --------------------- | ------ | -------------- |
+| `/api/v1/trade/open`  | POST   | Open position  |
+| `/api/v1/trade/close` | POST   | Close position |
 
 ### Market Data
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/trade/btc-klines` | GET | BTC candles |
-| `/api/v1/trade/sol-klines` | GET | SOL candles |
-| `/api/v1/trade/eth-klines` | GET | ETH candles |
+
+| Endpoint                   | Method | Description |
+| -------------------------- | ------ | ----------- |
+| `/api/v1/trade/btc-klines` | GET    | BTC candles |
+| `/api/v1/trade/sol-klines` | GET    | SOL candles |
+| `/api/v1/trade/eth-klines` | GET    | ETH candles |
 
 **Query**: Add `?duration=1s` for 1-second candles
 
 ### Authentication
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/users/signup` | POST | Register |
-| `/api/v1/users/login` | POST | Login |
+
+| Endpoint               | Method | Description |
+| ---------------------- | ------ | ----------- |
+| `/api/v1/users/signup` | POST   | Register    |
+| `/api/v1/users/login`  | POST   | Login       |
 
 ---
 
@@ -195,23 +203,24 @@ User clicks "Buy" → HTTP Server → Redis Queue → Engine
 
 ### Server → Client
 
-| Event | Data | Description |
-|-------|------|-------------|
-| `BTC_LIVE` | `{ time, open, high, low, close }` | BTC 1m update |
-| `BTC_TRADE` | `{ price, quantity, timestamp }` | BTC trade |
-| `SOL_LIVE` | `{ time, open, high, low, close }` | SOL 1m update |
-| `SOL_TRADE` | `{ price, quantity, timestamp }` | SOL trade |
-| `ETH_LIVE` | `{ time, open, high, low, close }` | ETH 1m update |
-| `ETH_TRADE` | `{ price, quantity, timestamp }` | ETH trade |
-| `open-orders` | Order object | New order |
-| `close-orders` | Order object | Closed order |
-| `positions-update` | `{ id, currentPnl, positionValue }` | P&L update |
+| Event              | Data                                | Description   |
+| ------------------ | ----------------------------------- | ------------- |
+| `BTC_LIVE`         | `{ time, open, high, low, close }`  | BTC 1m update |
+| `BTC_TRADE`        | `{ price, quantity, timestamp }`    | BTC trade     |
+| `SOL_LIVE`         | `{ time, open, high, low, close }`  | SOL 1m update |
+| `SOL_TRADE`        | `{ price, quantity, timestamp }`    | SOL trade     |
+| `ETH_LIVE`         | `{ time, open, high, low, close }`  | ETH 1m update |
+| `ETH_TRADE`        | `{ price, quantity, timestamp }`    | ETH trade     |
+| `open-orders`      | Order object                        | New order     |
+| `close-orders`     | Order object                        | Closed order  |
+| `positions-update` | `{ id, currentPnl, positionValue }` | P&L update    |
 
 ---
 
 ## Database Schema
 
 ### Candlestick Tables
+
 ```
 Btc_1_min, Sol_1_min, Eth_1_min  # 1-minute candles
 Btc_1_sec, Sol_1_sec, Eth_1_sec  # 1-second candles
@@ -220,6 +229,7 @@ Columns: id, time (Unix), open, high, low, close
 ```
 
 ### User Table
+
 ```
 User: id, username, password, token, userBalance
 ```
@@ -229,24 +239,29 @@ User: id, username, password, token, userBalance
 ## Key Features Explained
 
 ### Real-time P&L
+
 Uses JavaScript Proxy pattern to auto-update P&L when prices change:
+
 ```typescript
 const priceHandler = {
   set(target, prop, value) {
     target[prop] = value;
     updatePosition(); // Recalculate all open orders
     return true;
-  }
+  },
 };
 ```
 
 ### Redis Streams
+
 - Message persistence (survives restarts)
 - Message replay capability
 - Efficient XREAD with BLOCK for real-time
 
 ### Trade Filtering
+
 Old trades filtered by timestamp to prevent stale data:
+
 ```typescript
 if (now - tickTime > 10) return; // Skip trades >10s old
 ```
@@ -256,18 +271,21 @@ if (now - tickTime > 10) return; // Skip trades >10s old
 ## Environment Setup
 
 ### Required
+
 - PostgreSQL
 - Redis
 
 ### Environment Variables
 
 **http_server/.env**
+
 ```env
 DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 REDIS_URL=redis://localhost:6379
 ```
 
 **front_end/.env**
+
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
 NEXT_PUBLIC_ENGINE_URL=ws://localhost:5002
@@ -294,12 +312,14 @@ cd http_server && npx prisma db push
 ## VPS Deployment
 
 ### Prerequisites
+
 - Docker and Docker Compose installed
 - Node.js 18+ and npm installed
 
 ### Steps
 
 1. **Start Database Containers (PostgreSQL + Redis)**
+
    ```bash
    docker compose -f /path/to/Trading_Hub/docker-compose.db.yml up -d
    ```
@@ -311,6 +331,7 @@ cd http_server && npx prisma db push
    ```
 
 ### Notes
+
 - The `start.sh` script runs Prisma migrations automatically before starting services
 - Ensure `http_server/.env` has correct `DATABASE_URL` pointing to PostgreSQL container
 - Services will be available at:

@@ -39,25 +39,25 @@ function subscribeToKline(symbol: string, tickerName: string) {
       const kline = JSON.parse(data);
       const k = kline.k;
       pushToRedis(redis, kline, tickerName as "btc" | "sol" | "eth");
-      // if (k.x) {
-      //   await redis.xAdd(`klines-${tickerName.toLowerCase()}`, "*", {
-      //     t: String(k.t),
-      //     o: k.o,
-      //     c: k.c,
-      //     h: k.h,
-      //     l: k.l,
-      //     x: "1",
-      //   });
-      // } else {
-      await redis.xAdd(`live-${tickerName.toLowerCase()}`, "*", {
-        time: String(Math.floor(k.t / 1000)),
-        open: k.o,
-        high: k.h,
-        low: k.l,
-        close: k.c,
-        x: k.c,
-      });
-      // }
+      if (k.x) {
+        await redis.xAdd(`klines-${tickerName.toLowerCase()}`, "*", {
+          t: String(k.t),
+          o: k.o,
+          c: k.c,
+          h: k.h,
+          l: k.l,
+          x: "1",
+        });
+      } else {
+        await redis.xAdd(`live-${tickerName.toLowerCase()}`, "*", {
+          time: String(Math.floor(k.t / 1000)),
+          open: k.o,
+          high: k.h,
+          low: k.l,
+          close: k.c,
+          x: k.c,
+        });
+      }
     } catch (err) {
       console.error(`Error parsing ${tickerName} kline data:`, err);
     }
