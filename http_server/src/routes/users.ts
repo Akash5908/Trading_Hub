@@ -3,10 +3,11 @@ import express, { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { hashPassword } from "../utils/bcrypt.js";
+import { authLimiter } from "../lib/rateLimiter.js";
 
 const router = express.Router();
 const privateKey = process.env.JWT_SECRET!;
-router.post("/sign-up", async (req, res) => {
+router.post("/sign-up", authLimiter, async (req, res) => {
   const { username, password } = req.body;
   const hashedPassword = hashPassword(password);
 

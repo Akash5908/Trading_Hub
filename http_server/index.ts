@@ -6,6 +6,8 @@ import { storeTrade } from "./src/lib/poller.js";
 import { createClient } from "redis";
 import { initWebSocket } from "./src/lib/websocket.js";
 import { connectRedis } from "./src/lib/redis.js";
+import helmet from "helmet";
+import { generalLimiter } from "./src/lib/rateLimiter.js";
 const app = express();
 
 const port = 5001;
@@ -18,6 +20,9 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use(helmet()); //All security headers
+app.use(generalLimiter);
 app.use(express.json());
 
 async function startServer() {

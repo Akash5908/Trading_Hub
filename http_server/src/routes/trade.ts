@@ -8,6 +8,8 @@ import {
   redisClient,
   redisCallbackClient,
 } from "../lib/redis.js";
+import { openTradeValidator } from "../validators/trade.validator.js";
+import { tradeLimiter } from "../lib/rateLimiter.js";
 
 let redisSubscriber: RedisSubscriber | null = null;
 
@@ -31,13 +33,22 @@ const router = express.Router();
 export const CREATE_ORDER_QUEUE = "trade-stream";
 export const COMPLETED_ORDER_QUEUE = "trade-stream";
 
-router.post("/open", async (req, res) => {
+router.post("/open", tradeLimiter, async (req, res) => {
   if (!redisClient || !redisSubscriber) {
     return res
       .status(503)
       .send({ message: "Trade service unavailable (Redis not configured)" });
   }
   const { asset, side, qty, entryPrice, userName } = req.body;
+  const { success, data } = openTradeValidator.safeParse(req.body);
+
+  if (!success) {
+    const errors = openTradeValidator.safeParse(req.body).error?.issues;
+    res.status(403).json({
+      message: errors?.[0]?.message || "Validation failed",
+    });
+  }
+
   const id = Math.random().toString();
   console.log("Order came");
   //Add the new order in queue
@@ -116,7 +127,7 @@ router.get("/btc-klines", async (req, res) => {
   const { duration } = req.query;
   try {
     if (duration === "1m") {
-      const data = await prisma.btc_1_min.findMany();
+      const data = await prisma.btc_1_min.findMany({ take: 500 });
       return res.status(201).json(data);
     }
   } catch (error) {
@@ -128,7 +139,7 @@ router.get("/sol-klines", async (req, res) => {
   const { duration } = req.query;
   try {
     if (duration === "1m") {
-      const data = await prisma.sol_1_min.findMany();
+      const data = await prisma.sol_1_min.findMany({ take: 500 });
       return res.status(201).json(data);
     }
   } catch (error) {
@@ -140,7 +151,7 @@ router.get("/eth-klines", async (req, res) => {
   const { duration } = req.query;
   try {
     if (duration === "1m") {
-      const data = await prisma.eth_1_min.findMany();
+      const data = await prisma.eth_1_min.findMany({ take: 500 });
       return res.status(201).json(data);
     }
   } catch (error) {
