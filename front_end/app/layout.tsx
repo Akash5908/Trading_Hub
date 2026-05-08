@@ -17,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Trading Hub",
-  description: "A multi-service cryptocurrency trading platform featuring a real-time trading engine and price poller for BTC, SOL, and ETH. Integrated Binance API via WebSockets for live data streaming and implemented low-latency trade execution logic.",
+  description:
+    "A multi-service cryptocurrency trading platform featuring a real-time trading engine and price poller for BTC, SOL, and ETH. Integrated Binance API via WebSockets for live data streaming and implemented low-latency trade execution logic.",
 };
 
 export default function RootLayout({
@@ -42,7 +43,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Outfit:wght@100..900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cause:wght@100..900&family=Cursive:wght@100..900&display=swap"
           rel="stylesheet"
         ></link>
       </head>

@@ -15,6 +15,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AnimatedBackground } from "../motion-primitives/animated-background";
 
 export function Navbar() {
   const user = useAppSelector((state) => state.user);
@@ -41,7 +42,7 @@ export function Navbar() {
     async function fetchProfile(authToken: string) {
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/me?authToken=${authToken}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/me?authToken=${authToken}`,
         );
         const profilerData = res.data.profile;
         dispatch(
@@ -50,7 +51,7 @@ export function Navbar() {
             username: profilerData?.username,
             token: profilerData?.token,
             userBalance: profilerData?.userBalance,
-          })
+          }),
         );
       } catch (error) {
         console.error("[v0] Error fetching profile:", error);
@@ -77,7 +78,7 @@ export function Navbar() {
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         isScrolled
           ? "bg-black/60 backdrop-blur-xl border-b border-white/5 py-3"
-          : "bg-transparent py-6"
+          : "bg-transparent py-6",
       )}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
@@ -103,27 +104,33 @@ export function Navbar() {
         </div>
 
         {/* Navigation - Glassmorphism Style */}
-        <nav className="hidden md:flex items-center gap-1.5 bg-white/[0.03] border border-white/10 p-1.5 rounded-2xl backdrop-blur-md shadow-2xl">
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => router.push(tab.value)}
-              className={cn(
-                "relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest uppercase transition-all duration-300",
-                pathname === tab.value
-                  ? "bg-primary text-black shadow-[0_0_15px_rgba(var(--primary),0.4)]"
-                  : "text-zinc-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <tab.icon
-                className={cn(
-                  "w-3.5 h-3.5",
-                  pathname === tab.value ? "text-black" : "text-zinc-500"
-                )}
-              />
-              {tab.label}
-            </button>
-          ))}
+        <nav className="hidden md:flex items-center gap-1.5 bg-white/[0.03] border  border-white/10 p-1.5 rounded-2xl backdrop-blur-md shadow-2xl">
+          <AnimatedBackground
+            defaultValue={TABS[0].label}
+            onValueChange={(label) => {
+              const tab = TABS.find((t) => t.label === label);
+              if (tab) {
+                router.push(tab.value);
+              }
+            }}
+            className="rounded-lg bg-primary shadow-[0_0_15px_rgba(var(--primary),0.4)]"
+            transition={{
+              type: "spring",
+              bounce: 0.2,
+              duration: 0.3,
+            }}
+          >
+            {TABS.map((tab) => (
+              <button
+                key={tab.label}
+                data-id={tab.label}
+                type="button"
+                className="z-10 cursor-pointer inline-flex h-9 w-30 items-center justify-center font-normal text-white transition-colors duration-100 focus-visible:outline-2 data-[checked=true]:text-black"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </AnimatedBackground>
         </nav>
 
         {/* User Balance & Actions */}
