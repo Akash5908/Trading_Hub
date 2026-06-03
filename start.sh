@@ -44,7 +44,7 @@ npx prisma migrate deploy
 start_service "http-server" "http_server" "npm run dev"
 start_service "price-poller" "price_poller" "npm run dev"
 start_service "engine" "engine" "npm run dev"
-start_service "frontend" "front_end" "npm run dev"
+start_service "frontend" "front_end" "npm start"
 
 echo -e "${YELLOW}All services started in background!${NC}"
 echo -e "Use ${CYAN}'pm2 list'${NC} to see status."
