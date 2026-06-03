@@ -1,8 +1,6 @@
 "use client";
 import {
   LogOut,
-  LayoutDashboard,
-  Home,
   TrendingUp,
   Menu,
   Wallet,
@@ -15,15 +13,17 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AnimatedBackground } from "../motion-primitives/animated-background";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function Navbar() {
   const user = useAppSelector((state) => state.user);
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const pathname = usePathname();
+  const isDashboard = pathname === "/dashboard";
+  const dispatch = useAppDispatch();
   const [token, setToken] = useState<string | null>("");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -61,11 +61,6 @@ export function Navbar() {
     if (token) fetchProfile(token);
   }, [dispatch, token]);
 
-  const TABS = [
-    { label: "Home", value: "/", icon: Home },
-    { label: "Dashboard", value: "/dashboard", icon: LayoutDashboard },
-  ];
-
   const handleLogout = () => {
     logout();
     dispatch({ type: "logout" });
@@ -77,7 +72,9 @@ export function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         isScrolled
-          ? "bg-black/60 backdrop-blur-xl border-b border-white/5 py-3"
+          ? isDashboard
+            ? "bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-900 py-3"
+            : "bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 py-3"
           : "bg-transparent py-6",
       )}
     >
@@ -88,79 +85,125 @@ export function Navbar() {
           onClick={() => router.push("/")}
         >
           <div className="relative w-10 h-10 flex items-center justify-center">
-            <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full group-hover:bg-primary/30 transition-all" />
-            <div className="relative w-full h-full bg-primary rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform duration-500 shadow-[0_0_20px_rgba(var(--primary),0.3)]">
-              <TrendingUp className="text-black w-5 h-5 stroke-[2.5px]" />
+            <div className="absolute inset-0 bg-indigo-500/10 blur-lg rounded-full group-hover:bg-indigo-500/20 transition-all" />
+            <div className="relative w-full h-full bg-ribbon rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform duration-500 shadow-[0_0_20px_rgba(99,102,241,0.25)]">
+              <TrendingUp className="text-white w-5 h-5 stroke-[2.5px]" />
             </div>
           </div>
-          <div className="flex flex-col">
-            <h1 className="text-white text-lg font-bold tracking-tight leading-none uppercase">
-              Trading <span className="text-primary italic">Hub</span>
+          <div className="flex flex-col justify-center">
+            <h1 className={cn(
+              "text-sm font-bold tracking-tight leading-snug uppercase",
+              isDashboard ? "text-white" : "text-zinc-900"
+            )}>
+              Trading <span className="text-ribbon italic font-black">Hub</span>
             </h1>
-            <span className="text-[10px] text-zinc-500 font-medium tracking-[0.2em] uppercase">
+            <span className={cn(
+              "text-[9px] font-medium tracking-[0.2em] uppercase leading-none",
+              isDashboard ? "text-zinc-500" : "text-zinc-500"
+            )}>
               Premium Asset Mgmt
             </span>
           </div>
         </div>
 
-        {/* Navigation - Glassmorphism Style */}
-        <nav className="hidden md:flex items-center gap-1.5 bg-white/[0.03] border  border-white/10 p-1.5 rounded-2xl backdrop-blur-md shadow-2xl">
-          <AnimatedBackground
-            defaultValue={TABS[0].label}
-            onValueChange={(label) => {
-              const tab = TABS.find((t) => t.label === label);
-              if (tab) {
-                router.push(tab.value);
-              }
-            }}
-            className="rounded-lg bg-primary shadow-[0_0_15px_rgba(var(--primary),0.4)]"
-            transition={{
-              type: "spring",
-              bounce: 0.2,
-              duration: 0.3,
-            }}
-          >
-            {TABS.map((tab) => (
-              <button
-                key={tab.label}
-                data-id={tab.label}
-                type="button"
-                className="z-10 cursor-pointer inline-flex h-9 w-30 items-center justify-center font-normal text-white transition-colors duration-100 focus-visible:outline-2 data-[checked=true]:text-black"
-              >
-                {tab.label}
-              </button>
-            ))}
-          </AnimatedBackground>
-        </nav>
-
         {/* User Balance & Actions */}
         <div className="flex items-center gap-5">
           {user?.id ? (
             <div className="flex items-center gap-4">
-              <div className="hidden lg:flex flex-col items-end px-4 py-1.5 rounded-xl bg-white/[0.03] border border-white/10">
+              <div className={cn(
+                "hidden lg:flex flex-col justify-center items-end px-4 rounded-xl border h-10 transition-colors",
+                isDashboard
+                  ? "bg-zinc-900/60 border-zinc-800 text-white"
+                  : "bg-zinc-100/50 border-zinc-200 text-zinc-800"
+              )}>
                 <div className="flex items-center gap-1.5">
-                  <Wallet className="w-3 h-3 text-primary" />
+                  <Wallet className="w-3 h-3 text-ribbon" />
                   <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">
                     Live Portfolio
                   </span>
                 </div>
-                <span className="text-primary font-mono text-sm font-bold tracking-tighter">
+                <span className={cn(
+                  "font-mono text-sm font-bold tracking-tighter leading-none mt-0.5",
+                  isDashboard ? "text-zinc-200" : "text-zinc-800"
+                )}>
                   ${(Number(user.userBalance) || 0).toLocaleString() || "0.00"}
                 </span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl border-white/10 text-primary bg-white/5 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all font-bold text-[10px] uppercase tracking-wider"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-3.5 h-3.5 mr-2" />
-                Logout
-              </Button>
+              <div className="relative group avatar-dropdown-container">
+                <div 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={cn(
+                    "hidden md:flex items-center gap-3 border backdrop-blur-md px-4 rounded-xl cursor-pointer h-10 transition-colors",
+                    isDashboard
+                      ? "bg-zinc-900/60 border-zinc-800 text-white hover:bg-zinc-850/60"
+                      : "bg-zinc-100/60 border-zinc-200 text-zinc-900 hover:bg-zinc-200/60"
+                  )}
+                >
+                  <Avatar className="w-6 h-6 border border-zinc-800">
+                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-mono text-[10px]">
+                      {user.username ? user.username.slice(0, 2).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className={cn(
+                      "text-xs font-bold leading-tight",
+                      isDashboard ? "text-zinc-100" : "text-zinc-900"
+                    )}>
+                      {user.username}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dropdown dialog */}
+                <div className={cn(
+                  "absolute right-0 top-full pt-2 w-48 transition-all duration-200 z-50 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto",
+                  isDropdownOpen && "opacity-100 translate-y-0 pointer-events-auto"
+                )}>
+                  <div className={cn(
+                    "rounded-xl border shadow-2xl flex flex-col gap-1 p-2 pointer-events-auto",
+                    isDashboard
+                      ? "bg-zinc-950 border-zinc-900 text-zinc-100"
+                      : "bg-white border-zinc-200 text-zinc-800"
+                  )}>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start rounded-lg font-bold text-xs py-2 px-3 cursor-pointer",
+                        isDashboard
+                          ? "text-zinc-300 hover:bg-zinc-900 hover:text-white"
+                          : "text-zinc-800 hover:bg-zinc-100 hover:text-zinc-900"
+                      )}
+                      onClick={() => {
+                        router.push("/dashboard");
+                        setIsDropdownOpen(false);
+                      }}
+                    >
+                      Go to Dashboard
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 font-bold text-xs py-2 px-3 cursor-pointer"
+                      onClick={() => {
+                        handleLogout();
+                        setIsDropdownOpen(false);
+                      }}
+                    >
+                      <LogOut className="w-3.5 h-3.5 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <Button
-              className="bg-primary text-black hover:bg-primary/90 rounded-xl px-8 py-5 font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(var(--primary),0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className={cn(
+                "rounded-xl px-8 py-5 font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-none cursor-pointer",
+                isDashboard
+                  ? "bg-indigo-600 hover:bg-indigo-500 text-white border-none"
+                  : "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
+              )}
               onClick={() => router.push("/login")}
             >
               Get Started
@@ -169,7 +212,10 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-white/70 hover:text-white transition-colors"
+            className={cn(
+              "md:hidden transition-colors cursor-pointer",
+              isDashboard ? "text-zinc-400 hover:text-white hover:bg-zinc-900" : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
+            )}
           >
             <Menu className="w-6 h-6" />
           </Button>

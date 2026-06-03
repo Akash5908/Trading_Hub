@@ -2,7 +2,7 @@
 import {
   createChart,
   ColorType,
-  CandlestickSeries,
+  AreaSeries,
   Time,
   IChartApi,
   ISeriesApi,
@@ -29,14 +29,19 @@ export const ChartComponent = (props: {
 }) => {
   const {
     data,
-    colors: { backgroundColor = "white", textColor = "black" } = {},
+    colors: {
+      backgroundColor = "#09090b",
+      textColor = "#a1a1aa",
+      lineColor = "#8b5cf6",
+      areaTopColor = "rgba(139, 92, 246, 0.22)",
+      areaBottomColor = "rgba(139, 92, 246, 0.0)",
+    } = {},
   } = props;
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const lastDataHashRef = useRef<string>("");
-  const windowWidth = typeof window !== "undefined" ? window.innerWidth : 800;
 
   useEffect(() => {
     const handleResize = () => {
@@ -53,9 +58,14 @@ export const ChartComponent = (props: {
       layout: {
         background: { type: ColorType.Solid, color: backgroundColor },
         textColor,
+        fontFamily: "Outfit, sans-serif",
       },
-      width: windowWidth > 1000 ? 800 : 1200,
-      height: 600,
+      grid: {
+        vertLines: { color: "rgba(63, 63, 70, 0.08)" },
+        horzLines: { color: "rgba(63, 63, 70, 0.08)" },
+      },
+      width: chartContainerRef.current.clientWidth || 700,
+      height: 320,
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
@@ -67,23 +77,35 @@ export const ChartComponent = (props: {
             hour12: true,
           });
         },
+        borderVisible: false,
+      },
+      rightPriceScale: {
+        borderVisible: false,
       },
     });
     chart.timeScale().fitContent();
 
-    const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#26a69a",
-      downColor: "#ef5350",
-      borderVisible: false,
-      wickUpColor: "#26a69a",
-      wickDownColor: "#ef5350",
+    const series = chart.addSeries(AreaSeries, {
+      lineColor,
+      topColor: areaTopColor,
+      bottomColor: areaBottomColor,
+      lineWidth: 2,
+      priceFormat: {
+        type: "price",
+        precision: 2,
+        minMove: 0.01,
+      },
     });
 
     const sortedData = [...data]
       .sort((a, b) => Number(a.time) - Number(b.time))
       .filter(
         (item, index, arr) => index === 0 || arr[index - 1].time !== item.time,
-      );
+      )
+      .map((item) => ({
+        time: item.time,
+        value: item.close,
+      }));
     series.setData(sortedData);
 
     chartRef.current = chart;
@@ -106,24 +128,26 @@ export const ChartComponent = (props: {
       .sort((a, b) => Number(a.time) - Number(b.time))
       .filter(
         (item, index, arr) => index === 0 || arr[index - 1].time !== item.time,
-      );
+      )
+      .map((item) => ({
+        time: item.time,
+        value: item.close,
+      }));
 
     const firstTime = Number(sortedData[0]?.time) || 0;
     const dataHash = `${firstTime}-${sortedData.length}`;
     
     if (dataHash === lastDataHashRef.current) {
-      const lastCandle = sortedData[sortedData.length - 1];
-      const lastCandleTime = Number(lastCandle.time);
+      const lastPoint = sortedData[sortedData.length - 1];
+      const lastPointTime = Number(lastPoint.time);
       const currentSeriesData = seriesRef.current.data();
       
       if (currentSeriesData.length > 0) {
-        const lastSeriesCandle = currentSeriesData[currentSeriesData.length - 1];
-        const lastSeriesTime = Number(lastSeriesCandle.time);
+        const lastSeriesPoint = currentSeriesData[currentSeriesData.length - 1];
+        const lastSeriesTime = Number(lastSeriesPoint.time);
         
-        if (lastCandleTime > lastSeriesTime) {
-          seriesRef.current.update(lastCandle);
-        } else if (lastCandleTime === lastSeriesTime) {
-          seriesRef.current.update(lastCandle);
+        if (lastPointTime >= lastSeriesTime) {
+          seriesRef.current.update(lastPoint);
         }
       }
     } else {
@@ -133,7 +157,7 @@ export const ChartComponent = (props: {
     }
   }, [data]);
 
-  return <div ref={chartContainerRef} />;
+  return <div ref={chartContainerRef} className="w-full" />;
 };
 
 export function Chart(props: { data: chartData[] }) {

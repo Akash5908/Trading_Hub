@@ -258,26 +258,26 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen dark bg-[#09090b] text-zinc-100 p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl my-[8vh]">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-5xl font-bold tracking-tight text-foreground text-white">
+            <h1 className="text-4xl font-bold tracking-tight text-white">
               Crypto Trading Dashboard
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-zinc-400">
               Real-time cryptocurrency market data and analysis
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Activity className="h-7 w-7 text-blue-600 animate-pulse" />
-            <span className="text-lg font-medium text-muted-foreground">
+            <Activity className="h-7 w-7 text-indigo-500 animate-pulse" />
+            <span className="text-lg font-medium text-zinc-400">
               Live Market
             </span>
           </div>
         </div>
 
-        <Card className="border-border bg-card mb-6">
+        <Card className="border-zinc-900 bg-zinc-950/40 backdrop-blur-md mb-6">
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -286,11 +286,11 @@ const DashboardPage = () => {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="min-w-[140px] font-semibold bg-transparent"
+                      className="min-w-[140px] font-semibold bg-zinc-900/50 border-zinc-800 text-zinc-100 hover:bg-zinc-800 hover:text-white"
                     >
                       {getCurrencySymbol(selectedCurrency)}
                       <svg
-                        className="ml-2 h-4 w-4"
+                        className="ml-2 h-4 w-4 text-zinc-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -304,11 +304,11 @@ const DashboardPage = () => {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-popover">
-                    <DropdownMenuLabel className="text-popover-foreground">
+                  <DropdownMenuContent className="w-56 bg-zinc-950 border border-zinc-900 text-zinc-100">
+                    <DropdownMenuLabel className="text-zinc-400">
                       Select Currency
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-zinc-900" />
                     <DropdownMenuRadioGroup
                       value={selectedCurrency}
                       onValueChange={(value: string) =>
@@ -319,33 +319,33 @@ const DashboardPage = () => {
                     >
                       <DropdownMenuRadioItem
                         value="BTCUSDT"
-                        className="cursor-pointer"
+                        className="cursor-pointer focus:bg-zinc-900 focus:text-white text-zinc-300"
                       >
                         <div className="flex flex-col">
                           <span className="font-semibold">Bitcoin</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-zinc-500">
                             BTC/USDT
                           </span>
                         </div>
                       </DropdownMenuRadioItem>
                       <DropdownMenuRadioItem
                         value="ETHUSDT"
-                        className="cursor-pointer"
+                        className="cursor-pointer focus:bg-zinc-900 focus:text-white text-zinc-300"
                       >
                         <div className="flex flex-col">
                           <span className="font-semibold">Ethereum</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-zinc-500">
                             ETH/USDT
                           </span>
                         </div>
                       </DropdownMenuRadioItem>
                       <DropdownMenuRadioItem
                         value="SOLUSDT"
-                        className="cursor-pointer"
+                        className="cursor-pointer focus:bg-zinc-900 focus:text-white text-zinc-300"
                       >
                         <div className="flex flex-col">
                           <span className="font-semibold">Solana</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-zinc-500">
                             SOL/USDT
                           </span>
                         </div>
@@ -354,17 +354,17 @@ const DashboardPage = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <span className="px-3 py-2 bg-muted rounded-md text-sm font-medium">
+                <span className="px-3 py-2 bg-zinc-900/60 text-zinc-300 border border-zinc-800 rounded-md text-sm font-medium">
                   1m
                 </span>
 
                 {chartData.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide">
                       {getCurrencyName(selectedCurrency)}
                     </p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-bold text-foreground">
+                      <p className="text-2xl font-bold text-white">
                         $
                         {currentPrice.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
@@ -373,7 +373,7 @@ const DashboardPage = () => {
                       </p>
                       <div
                         className={`flex items-center gap-1 text-sm font-semibold ${
-                          isPositive ? "text-accent" : "text-destructive"
+                          isPositive ? "text-emerald-500" : "text-rose-500"
                         }`}
                       >
                         {isPositive ? (
@@ -394,20 +394,20 @@ const DashboardPage = () => {
               {chartData.length > 0 && (
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground text-xs mb-1">High</p>
-                    <p className="font-semibold text-foreground">
+                    <p className="text-zinc-500 text-xs mb-1">High</p>
+                    <p className="font-semibold text-zinc-200">
                       ${chartData[chartData.length - 1]?.high.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs mb-1">Low</p>
-                    <p className="font-semibold text-foreground">
+                    <p className="text-zinc-500 text-xs mb-1">Low</p>
+                    <p className="font-semibold text-zinc-200">
                       ${chartData[chartData.length - 1]?.low.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs mb-1">Open</p>
-                    <p className="font-semibold text-foreground">
+                    <p className="text-zinc-500 text-xs mb-1">Open</p>
+                    <p className="font-semibold text-zinc-200">
                       ${chartData[chartData.length - 1]?.open.toFixed(2)}
                     </p>
                   </div>
@@ -418,17 +418,68 @@ const DashboardPage = () => {
         </Card>
 
         {chartData.length > 2 && (
-          <Card className="border-border bg-card overflow-hidden">
-            <CardContent className="p-6 ">
+          <Card className="border-zinc-900 bg-zinc-950/40 backdrop-blur-md overflow-hidden mb-6">
+            <CardContent className="p-6">
               {isLoading && (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-4 text-zinc-400">
                   Loading chart data...
                 </div>
               )}
-              <div className=" flex flex-1/2  justify-center rounded-lg overflow-hidden">
-                <Chart data={chartData} />
+              
+              {/* Responsive Dashboard Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 rounded-lg items-start">
+                <div className="lg:col-span-2 bg-zinc-950/50 border border-zinc-900 rounded-xl p-4 flex flex-col">
+                  {/* Premium Chart Header Block */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 pb-4 border-b border-zinc-900/60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center font-bold text-sm text-zinc-100 border border-zinc-800">
+                        {getCurrencySymbol(selectedCurrency)[0]}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-lg tracking-tight">
+                            {getCurrencySymbol(selectedCurrency)} / USDT
+                          </span>
+                          <span className="text-2xl font-bold text-zinc-100 ml-3">
+                            ${currentPrice.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className={`font-semibold ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
+                            {isPositive ? "+" : ""}{priceChangePercent.toFixed(2)}%
+                          </span>
+                          <span className="text-zinc-500">Past 24 hours</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Interval selector */}
+                    <div className="flex items-center gap-1 bg-zinc-900/40 p-1 rounded-lg border border-zinc-900">
+                      {["1H", "4H", "1D", "1W", "1M", "6M"].map((interval) => (
+                        <button
+                          key={interval}
+                          className={`px-2.5 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
+                            interval === "1D"
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                              : "text-zinc-400 hover:text-zinc-200"
+                          }`}
+                        >
+                          {interval}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                <div>
+                  <div className="h-[320px] w-full min-h-0">
+                    <Chart data={chartData} />
+                  </div>
+
+                  {/* Live order stream logs placed directly below chart */}
+                  <TradingComponent asset={selectedCurrency} />
+                </div>
+                <div className="flex justify-center w-full">
                   <TradingPanel
                     assetPrice={Number(currentPrice.toFixed(2))}
                     selectedCurrency={getCurrencySymbol(selectedCurrency)}
@@ -439,28 +490,23 @@ const DashboardPage = () => {
               </div>
 
               {/* Orders panel  */}
-              <div>
+              <div className="mt-6">
                 <OrdersPage />
-              </div>
-
-              {/* Ask/sell Trade section */}
-              <div className="rounded-lg overflow-hidden my-4">
-                <TradingComponent asset={selectedCurrency} />
               </div>
             </CardContent>
           </Card>
         )}
 
         {chartData.length <= 2 && (
-          <Card className="border-border bg-card">
+          <Card className="border-zinc-900 bg-zinc-950/40 backdrop-blur-md">
             <CardContent className="p-12">
               <div className="flex flex-col items-center justify-center text-center gap-4">
-                <Activity className="h-12 w-12 text-muted-foreground animate-pulse" />
+                <Activity className="h-12 w-12 text-zinc-600 animate-pulse" />
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                  <h3 className="text-lg font-semibold text-white mb-1">
                     Loading Market Data
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-zinc-500">
                     Fetching real-time cryptocurrency prices...
                   </p>
                 </div>

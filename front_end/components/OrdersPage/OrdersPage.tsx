@@ -115,59 +115,59 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h- bg-background p-6 lg:p-10 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+    <div className="w-full bg-zinc-950/20 rounded-xl border border-zinc-900/50 p-6 font-sans mt-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <header className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold tracking-tight text-white">
             Open Positions
-          </h1>
-          <p className="text-muted-foreground text-lg">
+          </h2>
+          <p className="text-zinc-500 text-xs">
             Real-time monitoring and management of your active market trades.
           </p>
         </header>
 
-        <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl overflow-hidden">
-          <CardHeader className="border-b border-border/50 py-5 px-8 flex flex-row items-center justify-between bg-muted/20">
-            <CardTitle className="text-xl font-semibold flex items-center gap-3">
+        <Card className="border-zinc-900 bg-zinc-950/50 backdrop-blur-md shadow-xl overflow-hidden mt-4">
+          <CardHeader className="border-b border-zinc-900 py-4 px-6 flex flex-row items-center justify-between bg-zinc-950">
+            <CardTitle className="text-base font-semibold flex items-center gap-3 text-white">
               Market Positions
               <Badge
                 variant="outline"
-                className="rounded-full bg-primary/5 text-primary border-primary/20 px-3"
+                className="rounded-full bg-zinc-900 text-zinc-300 border-zinc-800 px-3"
               >
                 {openOrders.length}
               </Badge>
             </CardTitle>
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground bg-background/50 px-3 py-1.5 rounded-full border border-border/50">
-              <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-900/40 px-3 py-1.5 rounded-full border border-zinc-900">
+              <RefreshCw className="h-3 w-3 animate-spin text-emerald-500" />
               Live Feed
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="font-semibold py-4">Asset</TableHead>
-                    <TableHead className="font-semibold">Side</TableHead>
-                    <TableHead className="font-semibold">Quantity</TableHead>
-                    <TableHead className="font-semibold">Entry Price</TableHead>
-                    <TableHead className="font-semibold">Current PnL</TableHead>
-                    <TableHead className="font-semibold">Position</TableHead>
-                    <TableHead className="text-right font-semibold pr-8">
+                <TableHeader className="bg-zinc-900/40">
+                  <TableRow className="border-zinc-900 hover:bg-transparent">
+                    <TableHead className="font-semibold py-3 text-zinc-400">Asset</TableHead>
+                    <TableHead className="font-semibold text-zinc-400">Side</TableHead>
+                    <TableHead className="font-semibold text-zinc-400">Quantity</TableHead>
+                    <TableHead className="font-semibold text-zinc-400">Entry Price</TableHead>
+                    <TableHead className="font-semibold text-zinc-400">Current PnL</TableHead>
+                    <TableHead className="font-semibold text-zinc-400">Position</TableHead>
+                    <TableHead className="text-right font-semibold pr-8 text-zinc-400">
                       Action
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {openOrders.length === 0 ? (
-                    <TableRow>
+                    <TableRow className="border-zinc-900">
                       <TableCell
-                        colSpan={6}
-                        className="h-48 text-center text-muted-foreground"
+                        colSpan={7}
+                        className="h-48 text-center text-zinc-500"
                       >
                         <div className="flex flex-col items-center gap-2">
                           <p>No open positions found</p>
-                          <p className="text-xs">
+                          <p className="text-xs text-zinc-600">
                             New trades will appear here automatically
                           </p>
                         </div>
@@ -177,23 +177,23 @@ const OrdersPage = () => {
                     openOrders.map((order) => (
                       <TableRow
                         key={order.id}
-                        className="border-border hover:bg-muted/30 transition-colors group"
+                        className="border-zinc-900 hover:bg-zinc-900/20 transition-colors group"
                       >
-                        <TableCell className="py-5">
+                        <TableCell className="py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary border border-primary/20">
+                            <div className="h-8 w-8 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-xs text-zinc-300 border border-zinc-800">
                               {order.asset[0]}
                             </div>
-                            <div className="font-bold">{order.asset}</div>
+                            <div className="font-semibold text-white">{order.asset}</div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant="secondary"
-                            className={`uppercase px-2.5 py-0.5 font-medium border ${
+                            className={`uppercase px-2.5 py-0.5 font-semibold border rounded ${
                               order.side === "buy"
-                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                : "bg-rose-500/10 text-rose-400 border-rose-500/20"
                             }`}
                           >
                             {order.side === "buy" ? (
@@ -207,18 +207,18 @@ const OrdersPage = () => {
                             )}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono tabular-nums">
+                        <TableCell className="font-mono tabular-nums text-zinc-300">
                           {order.qty}
                         </TableCell>
-                        <TableCell className="font-mono tabular-nums">
+                        <TableCell className="font-mono tabular-nums text-zinc-300">
                           ${order.entryPrice.toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <div
-                            className={`font-mono tabular-nums flex items-center gap-1 ${
+                            className={`font-mono tabular-nums flex items-center gap-1 font-semibold ${
                               (order.currentPnl || 0) >= 0
-                                ? "text-emerald-500"
-                                : "text-rose-500"
+                                ? "text-emerald-400"
+                                : "text-rose-400"
                             }`}
                           >
                             {(order.currentPnl || 0) >= 0 ? "+" : ""}
@@ -227,10 +227,10 @@ const OrdersPage = () => {
                         </TableCell>
                         <TableCell>
                           <div
-                            className={`font-mono tabular-nums flex items-center gap-1 ${
+                            className={`font-mono tabular-nums flex items-center gap-1 font-semibold ${
                               (order.currentPnl || 0) >= 0
-                                ? "text-emerald-500"
-                                : "text-rose-500"
+                                ? "text-emerald-400"
+                                : "text-rose-400"
                             }`}
                           >
                             ${order.positionValue?.toLocaleString()}
@@ -241,7 +241,7 @@ const OrdersPage = () => {
                           <Button
                             variant="destructive"
                             size="sm"
-                            className="h-9 px-5 font-bold shadow-lg shadow-destructive/20  hover:scale-105 active:scale-95 transition-all bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md"
+                            className="h-8 px-4 font-bold shadow-lg shadow-rose-950/20 hover:scale-105 active:scale-95 transition-all bg-rose-600 hover:bg-rose-500 text-white rounded cursor-pointer"
                             onClick={() => closeTrade(order.id)}
                             disabled={isClosing === order.id}
                           >
@@ -262,10 +262,10 @@ const OrdersPage = () => {
           </CardContent>
         </Card>
 
-        <footer className="pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+        <footer className="pt-4 border-t border-zinc-900 flex justify-between items-center text-xs text-zinc-500">
           <div>
             Logged in as:{" "}
-            <span className="text-foreground font-medium">
+            <span className="text-zinc-300 font-semibold">
               {openOrders[0]?.userName || "Active User"}
             </span>
           </div>
