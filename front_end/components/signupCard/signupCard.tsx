@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "../ui/button";
+import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "@/lib/validator";
@@ -138,10 +139,13 @@ const SignupCard = () => {
       {/* Right panel - Illustration */}
       <div className="hidden md:flex w-1/2 min-h-screen p-8 bg-zinc-50 items-center justify-center">
         <div className="relative w-full h-full max-h-[85vh] rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-600 to-violet-700">
-          <img
+          <Image
             src="/signup_illustration.png"
             alt="Signup Illustration"
-            className="w-full h-full object-cover object-center"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover object-center"
           />
         </div>
       </div>
