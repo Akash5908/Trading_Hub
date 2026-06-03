@@ -38,7 +38,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased `}
       >
         <ReduxProvider>
-          <Navbar />
+         
           {children}
           <DisableDevTools/>
           <Toaster />
